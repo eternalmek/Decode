@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+// pages/app.jsx (protected page)
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import {
   MessageSquare,
   Brain,
@@ -10,23 +12,14 @@ import {
   Heart,
   Zap,
   Copy,
-} from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+} from 'lucide-react';
 
-/*
-  Frontend page. Calls:
-  - POST /api/analyze  { input }
-  - POST /api/create-checkout-session  {}
-  Expects environment variables on server: OPENAI_API_KEY, STRIPE_SECRET_KEY, STRIPE_PRICE_ID
-  Client also needs NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for possible client-side usage (not required here).
-*/
-
-const Navbar = ({ setShowPricing, session, onLogout }) => (
+const Navbar = ({ session, setShowPricing }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
         className="flex items-center gap-2 cursor-pointer"
-        onClick={() => window.location.reload()}
+        onClick={() => window.location.href = '/'}
       >
         <div className="bg-blue-600 p-1.5 rounded-lg">
           <MessageSquare className="w-5 h-5 text-white" />
@@ -42,43 +35,20 @@ const Navbar = ({ setShowPricing, session, onLogout }) => (
         >
           Pricing
         </button>
-        {session ? (
+        {session && (
           <button
-            onClick={onLogout}
-            className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = '/';
+            }}
+            className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
           >
             Log out
           </button>
-        ) : (
-          <a
-            href="/login"
-            className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
-          >
-            Login
-          </a>
         )}
       </div>
     </div>
   </nav>
-);
-
-const Hero = () => (
-  <div className="text-center pt-24 pb-12 px-4">
-    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-6">
-      <Sparkles className="w-3 h-3" />
-      AI-Powered Analysis
-    </div>
-    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
-      Decode what they <br className="hidden md:block" />
-      <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-        actually mean.
-      </span>
-    </h1>
-    <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-8">
-      Paste any conversation. We analyze the emotions, detect red flags, and
-      generate the perfect response instantly.
-    </p>
-  </div>
 );
 
 const EmotionCard = ({ label, value }) => {
@@ -185,19 +155,19 @@ const PaywallModal = ({ onClose, onSubscribe }) => (
   </div>
 );
 
-export default function App() {
+export default function AppPage() {
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [usageCount, setUsageCount] = useState(0);
   const [isPremium, setIsPremium] = useState(false);
-  const [session, setSession] = useState(null);
 
   useEffect(() => {
-    // Check Supabase session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      setLoading(false);
     });
 
     const {
@@ -206,9 +176,7 @@ export default function App() {
       setSession(session);
     });
 
-    const stored = localStorage.getItem("decodr_usage");
-    if (stored) setUsageCount(parseInt(stored, 10) || 0);
-
+    // Check premium status from localStorage
     const premium = localStorage.getItem("decodr_premium");
     if (premium === "true") setIsPremium(true);
 
@@ -218,7 +186,6 @@ export default function App() {
       if (params.get("payment") === "success") {
         localStorage.setItem("decodr_premium", "true");
         setIsPremium(true);
-        // remove query param from URL
         const url = new URL(window.location.href);
         url.searchParams.delete("payment");
         window.history.replaceState({}, document.title, url.toString());
@@ -233,12 +200,7 @@ export default function App() {
   const handleAnalyze = async () => {
     if (!input.trim()) return;
 
-    if (!isPremium && usageCount >= 1) {
-      setShowPaywall(true);
-      return;
-    }
-
-    setLoading(true);
+    setAnalyzing(true);
     setResult(null);
 
     try {
@@ -255,17 +217,11 @@ export default function App() {
 
       const data = await res.json();
       setResult(data);
-
-      if (!isPremium) {
-        const newCount = usageCount + 1;
-        setUsageCount(newCount);
-        localStorage.setItem("decodr_usage", String(newCount));
-      }
     } catch (err) {
       console.error("Analyze error:", err);
       alert("Analysis failed. Please try again.");
     } finally {
-      setLoading(false);
+      setAnalyzing(false);
     }
   };
 
@@ -283,7 +239,6 @@ export default function App() {
       }
       const { url } = await res.json();
       if (!url) throw new Error("No checkout url returned");
-      // Redirect to Stripe Checkout
       window.location.href = url;
     } catch (err) {
       console.error("Checkout error:", err);
@@ -291,14 +246,44 @@ export default function App() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+        <p className="text-gray-500">Loading…</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8 w-full max-w-md text-center">
+          <div className="p-3 bg-indigo-50 rounded-2xl inline-block mb-4">
+            <Lock className="w-6 h-6 text-indigo-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Login Required</h2>
+          <p className="text-gray-600 mb-6">
+            You need to be logged in to use this page.
+          </p>
+          <a
+            href="/login"
+            className="inline-block bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-black transition-all"
+          >
+            Go to Login
+          </a>
+          <div className="mt-4">
+            <a href="/" className="text-sm text-gray-500 hover:text-gray-700">
+              ← Back to home
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar setShowPricing={setShowPaywall} session={session} onLogout={handleLogout} />
+      <Navbar session={session} setShowPricing={setShowPaywall} />
 
       {showPaywall && (
         <PaywallModal
@@ -307,55 +292,56 @@ export default function App() {
         />
       )}
 
-      <main className="max-w-5xl mx-auto px-4 pt-6 pb-20">
-        {!result && <Hero />}
+      <main className="max-w-5xl mx-auto px-4 pt-24 pb-20">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Decodr</h1>
+          <p className="text-gray-500">You are logged in as {session.user.email}</p>
+        </div>
 
-        <div className={`transition-all duration-500 ${result ? "pt-24" : ""}`}>
-          <div className="relative max-w-3xl mx-auto">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-indigo-100 transform rotate-1 rounded-3xl opacity-50 blur-xl transition-all duration-500 group-hover:opacity-75"></div>
-            <div className="relative bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Paste the conversation here... (e.g. WhatsApp, iMessage, Instagram DM)"
-                className="w-full h-48 p-6 text-lg text-gray-700 placeholder:text-gray-300 focus:outline-none resize-none"
-                disabled={loading}
-              />
-              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
-                <span className="text-xs text-gray-400 font-medium">
-                  {input.length} characters
-                </span>
-                <div className="flex gap-3">
-                  {result && (
-                    <button
-                      onClick={clearAnalysis}
-                      className="text-sm font-medium text-gray-500 hover:text-gray-700 px-4 py-2"
-                    >
-                      Reset
-                    </button>
-                  )}
+        <div className="relative max-w-3xl mx-auto">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-indigo-100 transform rotate-1 rounded-3xl opacity-50 blur-xl transition-all duration-500"></div>
+          <div className="relative bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Paste the conversation here... (e.g. WhatsApp, iMessage, Instagram DM)"
+              className="w-full h-48 p-6 text-lg text-gray-700 placeholder:text-gray-300 focus:outline-none resize-none"
+              disabled={analyzing}
+            />
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
+              <span className="text-xs text-gray-400 font-medium">
+                {input.length} characters
+              </span>
+              <div className="flex gap-3">
+                {result && (
                   <button
-                    onClick={handleAnalyze}
-                    disabled={loading || !input.trim()}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 
-                      ${loading || !input.trim()
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-gray-900 hover:bg-black shadow-lg shadow-gray-900/20 hover:scale-105 active:scale-95"
-                      }`}
+                    onClick={clearAnalysis}
+                    className="text-sm font-medium text-gray-500 hover:text-gray-700 px-4 py-2"
                   >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        Analyze Message
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
+                    Reset
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={handleAnalyze}
+                  disabled={analyzing || !input.trim()}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 
+                    ${analyzing || !input.trim()
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-gray-900 hover:bg-black shadow-lg shadow-gray-900/20 hover:scale-105 active:scale-95"
+                    }`}
+                >
+                  {analyzing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      Analyze Message
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -396,16 +382,6 @@ export default function App() {
                     ))}
                 </div>
               </div>
-            </div>
-
-            <div className="mt-12 text-center">
-              <p className="text-gray-400 text-sm mb-2">Want to analyze another conversation?</p>
-              <button
-                onClick={() => setShowPaywall(true)}
-                className="text-blue-600 font-semibold hover:text-blue-700 hover:underline"
-              >
-                Unlock Unlimited Access &rarr;
-              </button>
             </div>
           </div>
         )}
