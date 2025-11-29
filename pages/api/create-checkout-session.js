@@ -11,22 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2022-11-15" });
 
-// Create a Supabase client with the user's access token for auth verification
-function getSupabaseClient(accessToken) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    }
-  );
-}
-
-// Admin client for updating profiles
+// Admin client for verifying users and updating profiles
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -63,16 +48,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verify the user
-    const supabase = getSupabaseClient(accessToken);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Verify the user using the admin client
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
 
     if (authError || !user) {
       res.status(401).json({ error: "Unauthorized. Invalid session." });
       return;
     }
-
-    const supabaseAdmin = getSupabaseAdmin();
 
     // Check if user has a profile with stripe_customer_id
     let { data: profile, error: profileError } = await supabaseAdmin

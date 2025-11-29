@@ -5,22 +5,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Create a Supabase client with the user's access token for auth verification
-function getSupabaseClient(accessToken) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    }
-  );
-}
-
-// Admin client for reading/creating profiles
+// Admin client for reading/creating profiles and verifying users
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -51,16 +36,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verify the user
-    const supabase = getSupabaseClient(accessToken);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Verify the user using the admin client
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
 
     if (authError || !user) {
       res.status(401).json({ error: "Unauthorized. Invalid session." });
       return;
     }
-
-    const supabaseAdmin = getSupabaseAdmin();
 
     // Get user's profile
     let { data: profile, error: profileError } = await supabaseAdmin

@@ -113,22 +113,22 @@ For testing webhooks locally:
 
 ## API Routes
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/api/create-checkout-session` | POST | Creates a Stripe Checkout session for subscription |
-| `/api/create-portal-session` | POST | Creates a Stripe Customer Portal session |
-| `/api/stripe-webhook` | POST | Handles Stripe webhook events |
-| `/api/get-profile` | GET | Gets the current user's profile |
-| `/api/delete-account` | POST | Deletes the user's account |
+| Route                          | Method | Description                                        |
+| ------------------------------ | ------ | -------------------------------------------------- |
+| `/api/create-checkout-session` | POST   | Creates a Stripe Checkout session for subscription |
+| `/api/create-portal-session`   | POST   | Creates a Stripe Customer Portal session           |
+| `/api/stripe-webhook`          | POST   | Handles Stripe webhook events                      |
+| `/api/get-profile`             | GET    | Gets the current user's profile                    |
+| `/api/delete-account`          | POST   | Deletes the user's account                         |
 
 ## Pages
 
-| Page | Description |
-|------|-------------|
-| `/` | Home page with analyze feature |
-| `/login` | Sign up / Sign in page |
-| `/app` | Main app page (requires authentication) |
-| `/account` | Account management page |
+| Page       | Description                              |
+| ---------- | ---------------------------------------- |
+| `/`        | Home page with analyze feature           |
+| `/login`   | Sign up / Sign in page                   |
+| `/app`     | Main app page (requires authentication)  |
+| `/account` | Account management page                  |
 
 ## Gating Premium Features
 

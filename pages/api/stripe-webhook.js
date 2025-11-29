@@ -101,6 +101,11 @@ export default async function handler(req, res) {
           } else {
             console.log(`User ${userId} upgraded to premium`);
           }
+        } else {
+          console.error("checkout.session.completed: Could not identify user - no metadata or customer ID match found", {
+            customerId,
+            hasMetadata: !!session.metadata?.supabase_user_id
+          });
         }
         break;
       }
