@@ -10,6 +10,9 @@ import {
   Heart,
   Zap,
   Copy,
+  User,
+  Crown,
+  X,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
@@ -21,7 +24,7 @@ import { supabase } from "../lib/supabaseClient";
   Client also needs NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for possible client-side usage (not required here).
 */
 
-const Navbar = ({ setShowPricing, session, onLogout }) => (
+const Navbar = ({ setShowPricing, session, onLogout, isPremium }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -36,19 +39,36 @@ const Navbar = ({ setShowPricing, session, onLogout }) => (
         </span>
       </div>
       <div className="flex items-center gap-6">
-        <button
-          onClick={() => setShowPricing(true)}
-          className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
-        >
-          Pricing
-        </button>
-        {session ? (
+        {!isPremium && (
           <button
-            onClick={onLogout}
-            className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+            onClick={() => setShowPricing(true)}
+            className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
           >
-            Log out
+            Pricing
           </button>
+        )}
+        {isPremium && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
+            <Crown className="w-3 h-3" />
+            Premium
+          </span>
+        )}
+        {session ? (
+          <>
+            <a
+              href="/account"
+              className="hidden sm:flex text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors items-center gap-1"
+            >
+              <User className="w-4 h-4" />
+              Account
+            </a>
+            <button
+              onClick={onLogout}
+              className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+            >
+              Log out
+            </button>
+          </>
         ) : (
           <a
             href="/login"
@@ -193,34 +213,63 @@ export default function App() {
   const [usageCount, setUsageCount] = useState(0);
   const [isPremium, setIsPremium] = useState(false);
   const [session, setSession] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  const [deletedMessage, setDeletedMessage] = useState(false);
+
+  const fetchProfile = async (token) => {
+    try {
+      const res = await fetch('/api/get-profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const profile = await res.json();
+        setIsPremium(profile.plan === 'premium');
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    }
+  };
 
   useEffect(() => {
     // Check Supabase session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      setAccessToken(data.session?.access_token);
+      if (data.session) {
+        fetchProfile(data.session.access_token);
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setAccessToken(session?.access_token);
+      if (session) {
+        fetchProfile(session.access_token);
+      }
     });
 
     const stored = localStorage.getItem("decodr_usage");
     if (stored) setUsageCount(parseInt(stored, 10) || 0);
 
-    const premium = localStorage.getItem("decodr_premium");
-    if (premium === "true") setIsPremium(true);
-
     // If Stripe redirected back with ?payment=success
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("payment") === "success") {
-        localStorage.setItem("decodr_premium", "true");
         setIsPremium(true);
         // remove query param from URL
         const url = new URL(window.location.href);
         url.searchParams.delete("payment");
+        window.history.replaceState({}, document.title, url.toString());
+      }
+      // Check for deleted account message
+      if (params.get("deleted") === "true") {
+        setDeletedMessage(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("deleted");
         window.history.replaceState({}, document.title, url.toString());
       }
     }
@@ -275,8 +324,19 @@ export default function App() {
   };
 
   const handleSubscribe = async () => {
+    // Redirect to login if not authenticated
+    if (!session) {
+      window.location.href = '/login';
+      return;
+    }
+    
     try {
-      const res = await fetch("/api/create-checkout-session", { method: "POST" });
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(txt || "Failed to create checkout session");
@@ -298,7 +358,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar setShowPricing={setShowPaywall} session={session} onLogout={handleLogout} />
+      <Navbar setShowPricing={setShowPaywall} session={session} onLogout={handleLogout} isPremium={isPremium} />
+
+      {deletedMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-50 text-green-700 px-6 py-3 rounded-xl border border-green-200 shadow-lg flex items-center gap-3">
+          <Check className="w-5 h-5" />
+          <span>Your account has been deleted successfully.</span>
+          <button onClick={() => setDeletedMessage(false)} className="hover:opacity-70">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {showPaywall && (
         <PaywallModal
