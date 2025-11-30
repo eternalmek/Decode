@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 
-const Navbar = ({ session, setShowPricing, isPremium, freeUsesRemaining }) => (
+const Navbar = ({ session, isPremium, freeUsesRemaining }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -34,14 +34,6 @@ const Navbar = ({ session, setShowPricing, isPremium, freeUsesRemaining }) => (
         </span>
       </div>
       <div className="flex items-center gap-6">
-        {!isPremium && (
-          <button
-            onClick={() => setShowPricing(true)}
-            className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
-          >
-            Pricing
-          </button>
-        )}
         {isPremium && (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
             <Crown className="w-3 h-3" />
@@ -394,7 +386,7 @@ export default function AppPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar session={session} setShowPricing={setShowPaywall} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} />
+      <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} />
 
       {showPaywall && (
         <PaywallModal

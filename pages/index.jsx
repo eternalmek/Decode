@@ -29,7 +29,7 @@ import ChatWidget from "../components/ChatWidget";
   Client also needs NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for possible client-side usage (not required here).
 */
 
-const Navbar = ({ setShowPricing, session, onLogout, isPremium, freeUsesRemaining }) => (
+const Navbar = ({ session, onLogout, isPremium, freeUsesRemaining }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -44,14 +44,6 @@ const Navbar = ({ setShowPricing, session, onLogout, isPremium, freeUsesRemainin
         </span>
       </div>
       <div className="flex items-center gap-6">
-        {!isPremium && (
-          <button
-            onClick={() => setShowPricing(true)}
-            className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
-          >
-            Pricing
-          </button>
-        )}
         {isPremium && (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
             <Crown className="w-3 h-3" />
@@ -556,7 +548,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar setShowPricing={setShowPaywall} session={session} onLogout={handleLogout} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} />
+      <Navbar session={session} onLogout={handleLogout} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} />
 
       {deletedMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-50 text-green-700 px-6 py-3 rounded-xl border border-green-200 shadow-lg flex items-center gap-3">
