@@ -48,7 +48,7 @@ const LoginForm = () => {
         if (error) throw error;
         
         // Check if user already exists (Supabase returns empty identities array for existing users)
-        if (data.user && data.user.identities && data.user.identities.length === 0) {
+        if (data.user?.identities?.length === 0) {
           throw new Error('An account with this email already exists. Please log in instead.');
         }
         
