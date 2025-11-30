@@ -36,7 +36,7 @@ import ChatWidget from "../components/ChatWidget";
   Client also needs NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for possible client-side usage (not required here).
 */
 
-const Navbar = ({ session, onLogout, isPremium, freeUsesRemaining, profileLoading }) => {
+const Navbar = ({ session, onLogout, isPremium }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   return (
@@ -68,20 +68,6 @@ const Navbar = ({ session, onLogout, isPremium, freeUsesRemaining, profileLoadin
             <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
               <Crown className="w-3 h-3" />
               Premium
-            </span>
-          )}
-          {session && !isPremium && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
-              <Sparkles className="w-3 h-3" />
-              {profileLoading || freeUsesRemaining === null ? (
-                <span className="font-bold">...</span>
-              ) : (
-                <>
-                  <span className="font-bold">{10 - freeUsesRemaining}</span>
-                  <span className="text-blue-400">/</span>
-                  <span>10</span>
-                </>
-              )}
             </span>
           )}
           {session ? (
@@ -811,7 +797,7 @@ export default function App() {
       </Head>
       
       <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-        <Navbar session={session} onLogout={handleLogout} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
+        <Navbar session={session} onLogout={handleLogout} isPremium={isPremium} />
 
         {deletedMessage && (
           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-50 text-green-700 px-6 py-3 rounded-xl border border-green-200 shadow-lg flex items-center gap-3">

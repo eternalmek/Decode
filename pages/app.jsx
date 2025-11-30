@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import ChatWidget from '../components/ChatWidget';
 
-const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
+const Navbar = ({ session, isPremium }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -42,20 +42,6 @@ const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
             <Crown className="w-3 h-3" />
             Premium
-          </span>
-        )}
-        {session && !isPremium && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
-            <Sparkles className="w-3 h-3" />
-            {profileLoading || freeUsesRemaining === null ? (
-              <span className="font-bold">...</span>
-            ) : (
-              <>
-                <span className="font-bold">{10 - freeUsesRemaining}</span>
-                <span className="text-blue-400">/</span>
-                <span>10</span>
-              </>
-            )}
           </span>
         )}
         <a
@@ -93,6 +79,52 @@ const EmotionCard = ({ label, value }) => {
     <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
       <span className="text-sm font-medium text-gray-600 capitalize">{label.replace(/_/g, " ")}</span>
       <span className={`text-xs font-bold px-2 py-1 rounded-md border ${getColor(value)}`}>{value}</span>
+    </div>
+  );
+};
+
+const SamplePromptCard = ({ title, icon, prompt, onUse, onCopy }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+    await navigator.clipboard.writeText(prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    if (onCopy) onCopy();
+  };
+
+  return (
+    <div 
+      className="group relative bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg cursor-pointer"
+      onClick={onUse}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        {icon}
+        <span className="text-xs font-bold uppercase text-gray-500 tracking-wider">{title}</span>
+      </div>
+      <p className="text-sm text-gray-700 leading-relaxed mb-3 whitespace-pre-line line-clamp-4">{prompt}</p>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-blue-600 font-medium group-hover:text-blue-700">
+          Click to use →
+        </span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all text-xs font-medium"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5" />
+              Copy
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 };
@@ -406,11 +438,23 @@ export default function AppPage() {
     );
   }
 
-  // Sample prompts for empty state
+  // Sample prompts for empty state - with titles and icons
   const samplePrompts = [
-    "Him: 'I need some space right now'\nMe: 'Okay, take your time'\nHim: 'Thanks for understanding'",
-    "Her: 'We should hang out sometime'\nMe: 'Yeah for sure! When are you free?'\nHer: 'I'll let you know'",
-    "Boss: 'Can we chat later?'\nMe: 'Sure, is everything okay?'\nBoss: 'Yes, just want to discuss something'"
+    {
+      title: "Relationship",
+      icon: <Heart className="w-4 h-4 text-pink-500" />,
+      prompt: "Him: 'I need some space right now'\nMe: 'Okay, take your time'\nHim: 'Thanks for understanding'"
+    },
+    {
+      title: "Dating",
+      icon: <Sparkles className="w-4 h-4 text-purple-500" />,
+      prompt: "Her: 'We should hang out sometime'\nMe: 'Yeah for sure! When are you free?'\nHer: 'I'll let you know'"
+    },
+    {
+      title: "Work",
+      icon: <Brain className="w-4 h-4 text-blue-500" />,
+      prompt: "Boss: 'Can we chat later?'\nMe: 'Sure, is everything okay?'\nBoss: 'Yes, just want to discuss something'"
+    }
   ];
 
   return (
@@ -422,7 +466,7 @@ export default function AppPage() {
       </Head>
       
       <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-        <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
+        <Navbar session={session} isPremium={isPremium} />
 
         {showPaywall && (
           <PaywallModal
@@ -503,17 +547,20 @@ export default function AppPage() {
             
             {/* Sample prompts when empty */}
             {!input.trim() && !result && (
-              <div className="mt-6">
-                <p className="text-sm text-gray-500 text-center mb-3">Try one of these examples:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {samplePrompts.map((prompt, idx) => (
-                    <button
+              <div className="mt-8">
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">Don&apos;t have a conversation handy?</h3>
+                  <p className="text-sm text-gray-500">Try one of these examples — click to use or copy to clipboard</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {samplePrompts.map((item, idx) => (
+                    <SamplePromptCard
                       key={idx}
-                      onClick={() => setInput(prompt)}
-                      className="text-left p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all text-xs text-gray-600 hover:text-gray-900"
-                    >
-                      <span className="line-clamp-3">{prompt.substring(0, 80)}...</span>
-                    </button>
+                      title={item.title}
+                      icon={item.icon}
+                      prompt={item.prompt}
+                      onUse={() => setInput(item.prompt)}
+                    />
                   ))}
                 </div>
               </div>
