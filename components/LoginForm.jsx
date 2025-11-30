@@ -47,6 +47,11 @@ const LoginForm = () => {
         });
         if (error) throw error;
         
+        // Check if user already exists (Supabase returns empty identities array for existing users)
+        if (data.user?.identities?.length === 0) {
+          throw new Error('An account with this email already exists. Please log in instead.');
+        }
+        
         // If email confirmation is disabled, user will be logged in immediately
         if (data.session) {
           await ensureProfile(data.session.access_token);
