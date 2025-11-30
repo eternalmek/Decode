@@ -1,5 +1,6 @@
 // pages/account.jsx - Account management page
 import { useEffect, useState } from 'react';
+import Head from 'next/head';
 import { supabase } from '../lib/supabaseClient';
 import {
   MessageSquare,
@@ -11,6 +12,10 @@ import {
   Check,
   X,
   ArrowLeft,
+  Sparkles,
+  Gift,
+  Shield,
+  Zap,
 } from 'lucide-react';
 
 const Navbar = ({ session }) => (
@@ -285,145 +290,224 @@ export default function AccountPage() {
   }
 
   const isPremium = profile?.plan === 'premium';
+  const freeUsesRemaining = profile?.free_uses_remaining ?? 10;
+  const usedAnalyses = 10 - freeUsesRemaining;
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans">
-      <Navbar session={session} />
+    <>
+      <Head>
+        <title>Account - Decodr</title>
+        <meta name="description" content="Manage your Decodr account, subscription, and settings." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      
+      <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans">
+        <Navbar session={session} />
 
-      {showDeleteModal && (
-        <DeleteConfirmModal
-          onConfirm={handleDeleteAccount}
-          onCancel={() => setShowDeleteModal(false)}
-          loading={deleteLoading}
-        />
-      )}
-
-      <main className="max-w-2xl mx-auto px-4 pt-24 pb-20">
-        <a
-          href="/app"
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 font-medium text-sm mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to App
-        </a>
-
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Account</h1>
-
-        {message && (
-          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-            message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
-            message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
-            'bg-blue-50 text-blue-700 border border-blue-200'
-          }`}>
-            {message.type === 'success' ? <Check className="w-5 h-5" /> :
-             message.type === 'error' ? <X className="w-5 h-5" /> :
-             <AlertTriangle className="w-5 h-5" />}
-            <span>{message.text}</span>
-            <button
-              onClick={() => setMessage(null)}
-              className="ml-auto hover:opacity-70"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+        {showDeleteModal && (
+          <DeleteConfirmModal
+            onConfirm={handleDeleteAccount}
+            onCancel={() => setShowDeleteModal(false)}
+            loading={deleteLoading}
+          />
         )}
 
-        {/* Profile Card */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-6">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                {session.user.email?.[0]?.toUpperCase() || 'U'}
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">{session.user.email}</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  {isPremium ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
-                      <Crown className="w-3 h-3" />
-                      Premium
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
-                      Free Plan
-                    </span>
-                  )}
+        <main className="max-w-2xl mx-auto px-4 pt-24 pb-20">
+          <a
+            href="/app"
+            className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 font-medium text-sm mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to App
+          </a>
+
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Account</h1>
+
+          {message && (
+            <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
+              message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+              message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+              'bg-blue-50 text-blue-700 border border-blue-200'
+            }`}>
+              {message.type === 'success' ? <Check className="w-5 h-5" /> :
+               message.type === 'error' ? <X className="w-5 h-5" /> :
+               <AlertTriangle className="w-5 h-5" />}
+              <span>{message.text}</span>
+              <button
+                onClick={() => setMessage(null)}
+                className="ml-auto hover:opacity-70"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Profile Card */}
+          <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-6">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  {session.user.email?.[0]?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{session.user.email}</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    {isPremium ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
+                        <Crown className="w-3 h-3" />
+                        Premium
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
+                        Free Plan
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Subscription Card */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-6">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-gray-400" />
-              Subscription
-            </h3>
-            
-            {isPremium ? (
-              <div>
-                <p className="text-gray-600 mb-4">
-                  You're on the Premium plan. Enjoy unlimited analysis and all premium features!
-                </p>
-                <button
-                  onClick={handleManageSubscription}
-                  className="w-full py-3 px-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  Manage Subscription
-                </button>
+          
+          {/* Usage Stats Card - Only for free users */}
+          {!isPremium && (
+            <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-6">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-blue-500" />
+                  Usage Statistics
+                </h3>
+                
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-gray-700 font-medium">Free Analyses Used</span>
+                    <span className="text-blue-600 font-bold">{usedAnalyses} / 10</span>
+                  </div>
+                  <div className="w-full bg-blue-100 rounded-full h-3 mb-2">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${(usedAnalyses / 10) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {freeUsesRemaining > 0 
+                      ? `${freeUsesRemaining} free ${freeUsesRemaining === 1 ? 'analysis' : 'analyses'} remaining`
+                      : 'Upgrade to Premium for unlimited access'}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div>
-                <p className="text-gray-600 mb-4">
-                  Upgrade to Premium for unlimited analysis, advanced features, and priority support.
-                </p>
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-blue-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-gray-900">Premium Plan</div>
-                      <div className="text-sm text-gray-500">Unlimited analysis</div>
+            </div>
+          )}
+
+          {/* Subscription Card */}
+          <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-6">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-gray-400" />
+                Subscription
+              </h3>
+              
+              {isPremium ? (
+                <div>
+                  <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-4 mb-4 border border-amber-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Crown className="w-6 h-6 text-amber-600" />
+                      <div>
+                        <span className="font-semibold text-gray-900">Premium Plan</span>
+                        <p className="text-sm text-gray-600">Unlimited message analysis</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">$9.99</div>
-                      <div className="text-sm text-gray-500">per month</div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Unlimited analyses</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Priority processing</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Advanced insights</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Cancel anytime</span>
+                      </div>
                     </div>
                   </div>
+                  <button
+                    onClick={handleManageSubscription}
+                    className="w-full py-3 px-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Manage Subscription
+                  </button>
                 </div>
-                <button
-                  onClick={handleSubscribe}
-                  className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
-                >
-                  <Crown className="w-4 h-4" />
-                  Go Premium
-                </button>
-              </div>
-            )}
+              ) : (
+                <div>
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 mb-4 border border-blue-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <div className="font-semibold text-gray-900 text-lg">Premium Plan</div>
+                        <div className="text-sm text-gray-500">Best for power users</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-gray-900">$9.99</div>
+                        <div className="text-sm text-gray-500">per month</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Zap className="w-4 h-4 text-amber-500" />
+                        <span>Unlimited analyses</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Shield className="w-4 h-4 text-green-500" />
+                        <span>Priority support</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Sparkles className="w-4 h-4 text-blue-500" />
+                        <span>Advanced insights</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Gift className="w-4 h-4 text-purple-500" />
+                        <span>Cancel anytime</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSubscribe}
+                    className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Crown className="w-4 h-4" />
+                    Upgrade to Premium
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Danger Zone */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-red-100 overflow-hidden">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-red-600 mb-2 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Danger Zone
-            </h3>
-            <p className="text-gray-600 mb-4 text-sm">
-              Permanently delete your account and all associated data. This action cannot be undone.
-            </p>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="w-full py-3 px-4 rounded-xl font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors flex items-center justify-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete My Account
-            </button>
+          {/* Danger Zone */}
+          <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-red-100 overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-red-600 mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Danger Zone
+              </h3>
+              <p className="text-gray-600 mb-4 text-sm">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full py-3 px-4 rounded-xl font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete My Account
+              </button>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   );
 }
