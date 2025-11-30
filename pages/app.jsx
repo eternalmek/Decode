@@ -307,12 +307,20 @@ export default function AppPage() {
           <p className="text-gray-600 mb-6">
             You need to be logged in to use this page.
           </p>
-          <a
-            href="/login"
-            className="inline-block bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-black transition-all"
-          >
-            Go to Login
-          </a>
+          <div className="flex gap-3 justify-center">
+            <a
+              href="/login"
+              className="inline-block bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-black transition-all"
+            >
+              Go to Login
+            </a>
+            <a
+              href="/login?mode=signup"
+              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all"
+            >
+              Sign up
+            </a>
+          </div>
           <div className="mt-4">
             <a href="/" className="text-sm text-gray-500 hover:text-gray-700">
               ← Back to home

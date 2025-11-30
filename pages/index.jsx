@@ -70,12 +70,20 @@ const Navbar = ({ setShowPricing, session, onLogout, isPremium }) => (
             </button>
           </>
         ) : (
-          <a
-            href="/login"
-            className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
-          >
-            Login
-          </a>
+          <>
+            <a
+              href="/login"
+              className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+            >
+              Login
+            </a>
+            <a
+              href="/login?mode=signup"
+              className="hidden sm:block text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm px-4 py-2 rounded-lg transition-colors"
+            >
+              Sign up
+            </a>
+          </>
         )}
       </div>
     </div>
