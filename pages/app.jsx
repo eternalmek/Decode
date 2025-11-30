@@ -12,9 +12,11 @@ import {
   Heart,
   Zap,
   Copy,
+  User,
+  Crown,
 } from 'lucide-react';
 
-const Navbar = ({ session, setShowPricing }) => (
+const Navbar = ({ session, setShowPricing, isPremium }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -29,12 +31,27 @@ const Navbar = ({ session, setShowPricing }) => (
         </span>
       </div>
       <div className="flex items-center gap-6">
-        <button
-          onClick={() => setShowPricing(true)}
-          className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+        {!isPremium && (
+          <button
+            onClick={() => setShowPricing(true)}
+            className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+          >
+            Pricing
+          </button>
+        )}
+        {isPremium && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
+            <Crown className="w-3 h-3" />
+            Premium
+          </span>
+        )}
+        <a
+          href="/account"
+          className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors flex items-center gap-1"
         >
-          Pricing
-        </button>
+          <User className="w-4 h-4" />
+          Account
+        </a>
         {session && (
           <button
             onClick={async () => {
@@ -158,15 +175,36 @@ const PaywallModal = ({ onClose, onSubscribe }) => (
 export default function AppPage() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
   const [input, setInput] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
 
+  const fetchProfile = async (token) => {
+    try {
+      const res = await fetch('/api/get-profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const profile = await res.json();
+        setIsPremium(profile.plan === 'premium');
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    }
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      setAccessToken(data.session?.access_token);
+      if (data.session) {
+        fetchProfile(data.session.access_token);
+      }
       setLoading(false);
     });
 
@@ -174,17 +212,16 @@ export default function AppPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setAccessToken(session?.access_token);
+      if (session) {
+        fetchProfile(session.access_token);
+      }
     });
-
-    // Check premium status from localStorage
-    const premium = localStorage.getItem("decodr_premium");
-    if (premium === "true") setIsPremium(true);
 
     // If Stripe redirected back with ?payment=success
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("payment") === "success") {
-        localStorage.setItem("decodr_premium", "true");
         setIsPremium(true);
         const url = new URL(window.location.href);
         url.searchParams.delete("payment");
@@ -232,7 +269,12 @@ export default function AppPage() {
 
   const handleSubscribe = async () => {
     try {
-      const res = await fetch("/api/create-checkout-session", { method: "POST" });
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(txt || "Failed to create checkout session");
@@ -283,7 +325,7 @@ export default function AppPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar session={session} setShowPricing={setShowPaywall} />
+      <Navbar session={session} setShowPricing={setShowPaywall} isPremium={isPremium} />
 
       {showPaywall && (
         <PaywallModal

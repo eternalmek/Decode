@@ -10,6 +10,19 @@ const LoginForm = () => {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
+  // Create profile after successful authentication
+  const ensureProfile = async (accessToken) => {
+    try {
+      await fetch('/api/get-profile', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    } catch (err) {
+      console.error('Error ensuring profile:', err);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -18,18 +31,32 @@ const LoginForm = () => {
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
-        setMessage('Check your email to confirm your account.');
+        
+        // If email confirmation is disabled, user will be logged in immediately
+        if (data.session) {
+          await ensureProfile(data.session.access_token);
+          setMessage('Account created successfully!');
+          window.location.href = '/app';
+        } else {
+          setMessage('Check your email to confirm your account.');
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        
+        // Ensure profile exists
+        if (data.session) {
+          await ensureProfile(data.session.access_token);
+        }
+        
         setMessage('Logged in successfully!');
         // Redirect to app page after successful login
         window.location.href = '/app';
