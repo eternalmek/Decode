@@ -1,5 +1,5 @@
 // components/LoginForm.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 const LoginForm = () => {
@@ -9,6 +9,16 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+
+  // Check for mode query parameter on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'signup') {
+        setMode('signup');
+      }
+    }
+  }, []);
 
   // Create profile after successful authentication
   const ensureProfile = async (accessToken) => {
