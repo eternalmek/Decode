@@ -282,7 +282,7 @@ export default function App() {
   const handleAnalyze = async () => {
     if (!input.trim()) return;
 
-    if (!isPremium && usageCount >= 1) {
+    if (!isPremium && usageCount >= 3) {
       setShowPaywall(true);
       return;
     }
