@@ -275,12 +275,16 @@ export default function AppPage() {
       const data = await res.json();
       setResult(data);
 
-      // Decrement local state for usage tracking
-      if (!isPremium && freeUsesRemaining !== null) {
-        setFreeUsesRemaining(freeUsesRemaining - 1);
+      // Refresh profile from server to get accurate usage count after analysis
+      if (!isPremium && accessToken) {
+        fetchProfile(accessToken);
       }
     } catch (err) {
       console.error("Analyze error:", err);
+      // Refresh profile to get accurate usage count after error
+      if (accessToken) {
+        fetchProfile(accessToken);
+      }
       alert("Analysis failed. Please try again.");
     } finally {
       setAnalyzing(false);

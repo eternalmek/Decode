@@ -340,20 +340,21 @@ export default function App() {
       const data = await res.json();
       setResult(data);
 
-      // Update usage count
-      if (!isPremium) {
-        if (session && freeUsesRemaining !== null) {
-          // Decrement local state for authenticated users
-          setFreeUsesRemaining(freeUsesRemaining - 1);
-        } else {
-          // Use localStorage for unauthenticated users
-          const newCount = usageCount + 1;
-          setUsageCount(newCount);
-          localStorage.setItem("decodr_usage", String(newCount));
-        }
+      // Refresh profile from server to get accurate usage count after analysis
+      if (!isPremium && session && accessToken) {
+        fetchProfile(accessToken);
+      } else if (!isPremium && !session) {
+        // Use localStorage for unauthenticated users
+        const newCount = usageCount + 1;
+        setUsageCount(newCount);
+        localStorage.setItem("decodr_usage", String(newCount));
       }
     } catch (err) {
       console.error("Analyze error:", err);
+      // Refresh profile to get accurate usage count after error
+      if (session && accessToken) {
+        fetchProfile(accessToken);
+      }
       alert("Analysis failed. Please try again.");
     } finally {
       setLoading(false);

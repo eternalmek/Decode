@@ -40,9 +40,7 @@ export default async function handler(req, res) {
   const authHeader = req.headers.authorization;
   const accessToken = authHeader?.replace("Bearer ", "");
 
-  let userId = null;
   let isPremium = false;
-  let freeUsesRemaining = null;
 
   if (accessToken) {
     try {
@@ -52,8 +50,6 @@ export default async function handler(req, res) {
       const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
 
       if (!authError && user) {
-        userId = user.id;
-
         // Get user's profile
         const { data: profile } = await supabaseAdmin
           .from("profiles")
@@ -63,15 +59,39 @@ export default async function handler(req, res) {
 
         if (profile) {
           isPremium = profile.plan === "premium";
-          freeUsesRemaining = profile.free_uses_remaining;
+          const freeUsesRemaining = profile.free_uses_remaining;
 
-          // Check if user has exhausted free uses
-          if (!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 0) {
-            res.status(403).json({
-              error: "Free trial limit reached. Please subscribe to continue.",
-              code: "TRIAL_LIMIT_REACHED"
-            });
-            return;
+          // Check and atomically decrement for non-premium users
+          if (!isPremium) {
+            if (freeUsesRemaining !== null && freeUsesRemaining <= 0) {
+              res.status(403).json({
+                error: "Free trial limit reached. Please subscribe to continue.",
+                code: "TRIAL_LIMIT_REACHED"
+              });
+              return;
+            }
+
+            // Atomically decrement only if remaining > 0
+            // Note: Usage is decremented before the API call to prevent race conditions.
+            // If the API call fails, the user still loses the usage to prevent abuse.
+            if (freeUsesRemaining !== null && freeUsesRemaining > 0) {
+              const { data: updateResult, error: updateError } = await supabaseAdmin
+                .from("profiles")
+                .update({ free_uses_remaining: freeUsesRemaining - 1 })
+                .eq("id", user.id)
+                .gt("free_uses_remaining", 0)
+                .select("free_uses_remaining")
+                .single();
+
+              if (updateError || !updateResult) {
+                // Race condition: another request already decremented to 0
+                res.status(403).json({
+                  error: "Free trial limit reached. Please subscribe to continue.",
+                  code: "TRIAL_LIMIT_REACHED"
+                });
+                return;
+              }
+            }
           }
         }
       }
@@ -149,20 +169,6 @@ Respond concisely. Use plain strings for values.
     ) {
       res.status(500).json({ error: "OpenAI returned unexpected JSON shape." });
       return;
-    }
-
-    // Decrement free uses for authenticated non-premium users
-    if (userId && !isPremium && freeUsesRemaining !== null && freeUsesRemaining > 0) {
-      try {
-        const supabaseAdmin = getSupabaseAdmin();
-        await supabaseAdmin
-          .from("profiles")
-          .update({ free_uses_remaining: freeUsesRemaining - 1 })
-          .eq("id", userId);
-      } catch (err) {
-        console.error("Error decrementing free uses:", err);
-        // Continue anyway - don't fail the request due to counter update
-      }
     }
 
     res.status(200).json(parsed);
