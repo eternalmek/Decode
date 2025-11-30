@@ -83,15 +83,18 @@ const EmotionCard = ({ label, value }) => {
   );
 };
 
-const SamplePromptCard = ({ title, icon, prompt, onUse, onCopy }) => {
+const SamplePromptCard = ({ title, icon, prompt, onUse }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e) => {
     e.stopPropagation();
-    await navigator.clipboard.writeText(prompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    if (onCopy) onCopy();
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
   };
 
   return (
@@ -103,7 +106,7 @@ const SamplePromptCard = ({ title, icon, prompt, onUse, onCopy }) => {
         {icon}
         <span className="text-xs font-bold uppercase text-gray-500 tracking-wider">{title}</span>
       </div>
-      <p className="text-sm text-gray-700 leading-relaxed mb-3 whitespace-pre-line line-clamp-4">{prompt}</p>
+      <p className="text-sm text-gray-700 leading-relaxed mb-3 whitespace-pre-line overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical' }}>{prompt}</p>
       <div className="flex items-center justify-between">
         <span className="text-xs text-blue-600 font-medium group-hover:text-blue-700">
           Click to use →
