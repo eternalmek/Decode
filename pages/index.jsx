@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import ChatWidget from "../components/ChatWidget";
 
 /*
   Frontend page. Calls:
@@ -480,6 +481,7 @@ export default function App() {
           </div>
         )}
       </main>
+      <ChatWidget />
     </div>
   );
 }
