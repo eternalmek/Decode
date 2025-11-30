@@ -225,6 +225,8 @@ export default function App() {
   const [accessToken, setAccessToken] = useState(null);
   const [deletedMessage, setDeletedMessage] = useState(false);
 
+  const [freeUsesRemaining, setFreeUsesRemaining] = useState(null);
+
   const fetchProfile = async (token) => {
     try {
       const res = await fetch('/api/get-profile', {
@@ -235,6 +237,9 @@ export default function App() {
       if (res.ok) {
         const profile = await res.json();
         setIsPremium(profile.plan === 'premium');
+        if (profile.free_uses_remaining !== undefined) {
+          setFreeUsesRemaining(profile.free_uses_remaining);
+        }
       }
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -291,33 +296,61 @@ export default function App() {
   const handleAnalyze = async () => {
     if (!input.trim()) return;
 
-    if (!isPremium && usageCount >= 3) {
-      setShowPaywall(true);
-      return;
+    // For authenticated users, use server-side usage tracking
+    // For unauthenticated users, use localStorage tracking
+    if (session) {
+      // Server will enforce usage limits for authenticated users
+      if (!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 0) {
+        setShowPaywall(true);
+        return;
+      }
+    } else {
+      // Use localStorage for unauthenticated users
+      if (!isPremium && usageCount >= 3) {
+        setShowPaywall(true);
+        return;
+      }
     }
 
     setLoading(true);
     setResult(null);
 
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
       const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ input }),
       });
 
       if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || "Analysis failed");
+        const errData = await res.json().catch(() => ({}));
+        if (errData.code === "TRIAL_LIMIT_REACHED") {
+          setShowPaywall(true);
+          setLoading(false);
+          return;
+        }
+        throw new Error(errData.error || "Analysis failed");
       }
 
       const data = await res.json();
       setResult(data);
 
+      // Update usage count
       if (!isPremium) {
-        const newCount = usageCount + 1;
-        setUsageCount(newCount);
-        localStorage.setItem("decodr_usage", String(newCount));
+        if (session && freeUsesRemaining !== null) {
+          // Decrement local state for authenticated users
+          setFreeUsesRemaining(freeUsesRemaining - 1);
+        } else {
+          // Use localStorage for unauthenticated users
+          const newCount = usageCount + 1;
+          setUsageCount(newCount);
+          localStorage.setItem("decodr_usage", String(newCount));
+        }
       }
     } catch (err) {
       console.error("Analyze error:", err);

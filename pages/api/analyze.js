@@ -1,6 +1,22 @@
 // Server-side API route to call OpenAI and return a structured JSON analysis.
 // Place this file in pages/api/analyze.js for Next.js (Node environment).
-// Required env: OPENAI_API_KEY
+// Required env: OPENAI_API_KEY, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+import { createClient } from "@supabase/supabase-js";
+
+// Admin client for reading/updating profiles
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -18,6 +34,51 @@ export default async function handler(req, res) {
   if (!OPENAI_API_KEY) {
     res.status(500).json({ error: "OpenAI API key not configured on server." });
     return;
+  }
+
+  // Check for authenticated user and enforce usage limits
+  const authHeader = req.headers.authorization;
+  const accessToken = authHeader?.replace("Bearer ", "");
+
+  let userId = null;
+  let isPremium = false;
+  let freeUsesRemaining = null;
+
+  if (accessToken) {
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+
+      // Verify the user
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+
+      if (!authError && user) {
+        userId = user.id;
+
+        // Get user's profile
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("plan, free_uses_remaining")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          isPremium = profile.plan === "premium";
+          freeUsesRemaining = profile.free_uses_remaining;
+
+          // Check if user has exhausted free uses
+          if (!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 0) {
+            res.status(403).json({
+              error: "Free trial limit reached. Please subscribe to continue.",
+              code: "TRIAL_LIMIT_REACHED"
+            });
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error checking user:", err);
+      // Continue without user verification - will fall back to unauthenticated behavior
+    }
   }
 
   // System prompt instructs the model to return valid JSON and nothing else.
@@ -88,6 +149,20 @@ Respond concisely. Use plain strings for values.
     ) {
       res.status(500).json({ error: "OpenAI returned unexpected JSON shape." });
       return;
+    }
+
+    // Decrement free uses for authenticated non-premium users
+    if (userId && !isPremium && freeUsesRemaining !== null && freeUsesRemaining > 0) {
+      try {
+        const supabaseAdmin = getSupabaseAdmin();
+        await supabaseAdmin
+          .from("profiles")
+          .update({ free_uses_remaining: freeUsesRemaining - 1 })
+          .eq("id", userId);
+      } catch (err) {
+        console.error("Error decrementing free uses:", err);
+        // Continue anyway - don't fail the request due to counter update
+      }
     }
 
     res.status(200).json(parsed);
