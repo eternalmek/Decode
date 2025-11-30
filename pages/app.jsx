@@ -83,6 +83,55 @@ const EmotionCard = ({ label, value }) => {
   );
 };
 
+const SamplePromptCard = ({ title, icon, prompt, onUse }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
+  return (
+    <div 
+      className="group relative bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg cursor-pointer"
+      onClick={onUse}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        {icon}
+        <span className="text-xs font-bold uppercase text-gray-500 tracking-wider">{title}</span>
+      </div>
+      <p className="text-sm text-gray-700 leading-relaxed mb-3 whitespace-pre-line overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical' }}>{prompt}</p>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-blue-600 font-medium group-hover:text-blue-700">
+          Click to use →
+        </span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all text-xs font-medium"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5" />
+              Copy
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ReplyCard = ({ type, text }) => {
   const [copied, setCopied] = useState(false);
 
@@ -392,11 +441,23 @@ export default function AppPage() {
     );
   }
 
-  // Sample prompts for empty state
+  // Sample prompts for empty state - with titles and icons
   const samplePrompts = [
-    "Him: 'I need some space right now'\nMe: 'Okay, take your time'\nHim: 'Thanks for understanding'",
-    "Her: 'We should hang out sometime'\nMe: 'Yeah for sure! When are you free?'\nHer: 'I'll let you know'",
-    "Boss: 'Can we chat later?'\nMe: 'Sure, is everything okay?'\nBoss: 'Yes, just want to discuss something'"
+    {
+      title: "Relationship",
+      icon: <Heart className="w-4 h-4 text-pink-500" />,
+      prompt: "Him: 'I need some space right now'\nMe: 'Okay, take your time'\nHim: 'Thanks for understanding'"
+    },
+    {
+      title: "Dating",
+      icon: <Sparkles className="w-4 h-4 text-purple-500" />,
+      prompt: "Her: 'We should hang out sometime'\nMe: 'Yeah for sure! When are you free?'\nHer: 'I'll let you know'"
+    },
+    {
+      title: "Work",
+      icon: <Brain className="w-4 h-4 text-blue-500" />,
+      prompt: "Boss: 'Can we chat later?'\nMe: 'Sure, is everything okay?'\nBoss: 'Yes, just want to discuss something'"
+    }
   ];
 
   return (
@@ -481,17 +542,20 @@ export default function AppPage() {
             
             {/* Sample prompts when empty */}
             {!input.trim() && !result && (
-              <div className="mt-6">
-                <p className="text-sm text-gray-500 text-center mb-3">Try one of these examples:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {samplePrompts.map((prompt, idx) => (
-                    <button
+              <div className="mt-8">
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">Don&apos;t have a conversation handy?</h3>
+                  <p className="text-sm text-gray-500">Try one of these examples — click to use or copy to clipboard</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {samplePrompts.map((item, idx) => (
+                    <SamplePromptCard
                       key={idx}
-                      onClick={() => setInput(prompt)}
-                      className="text-left p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all text-xs text-gray-600 hover:text-gray-900"
-                    >
-                      <span className="line-clamp-3">{prompt.substring(0, 80)}...</span>
-                    </button>
+                      title={item.title}
+                      icon={item.icon}
+                      prompt={item.prompt}
+                      onUse={() => setInput(item.prompt)}
+                    />
                   ))}
                 </div>
               </div>
