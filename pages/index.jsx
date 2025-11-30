@@ -19,7 +19,6 @@ import {
   Shield,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
-import ChatWidget from "../components/ChatWidget";
 
 /*
   Frontend page. Calls:
@@ -51,9 +50,11 @@ const Navbar = ({ session, onLogout, isPremium, freeUsesRemaining }) => (
           </span>
         )}
         {session && !isPremium && freeUsesRemaining !== null && (
-          <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
-            <Gift className="w-3 h-3" />
-            {freeUsesRemaining} free left
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
+            <Sparkles className="w-3 h-3" />
+            <span className="font-bold">{10 - freeUsesRemaining}</span>
+            <span className="text-blue-400">/</span>
+            <span>10</span>
           </span>
         )}
         {session ? (
@@ -677,7 +678,7 @@ export default function App() {
                 <>
                   <p className="text-gray-400 text-sm mb-2">
                     {freeUsesRemaining !== null && freeUsesRemaining > 0 
-                      ? `${freeUsesRemaining} free ${freeUsesRemaining === 1 ? 'analysis' : 'analyses'} remaining`
+                      ? <span>Used <span className="font-bold text-gray-600">{10 - freeUsesRemaining}/10</span> free analyses</span>
                       : 'Want unlimited access?'}
                   </p>
                   <button
@@ -692,7 +693,6 @@ export default function App() {
           </div>
         )}
       </main>
-      <ChatWidget />
     </div>
   );
 }

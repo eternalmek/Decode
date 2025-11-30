@@ -55,18 +55,36 @@ export default async function handler(req, res) {
         userId = user.id;
 
         // Get user's profile
-        const { data: profile } = await supabaseAdmin
+        let { data: profile, error: profileError } = await supabaseAdmin
           .from("profiles")
           .select("plan, free_uses_remaining")
           .eq("id", user.id)
           .single();
 
+        // If no profile exists, create one with default free uses
+        if (profileError && profileError.code === "PGRST116") {
+          const { data: newProfile, error: insertError } = await supabaseAdmin
+            .from("profiles")
+            .insert({
+              id: user.id,
+              email: user.email,
+              plan: "free",
+              free_uses_remaining: 10,
+            })
+            .select()
+            .single();
+
+          if (!insertError && newProfile) {
+            profile = newProfile;
+          }
+        }
+
         if (profile) {
           isPremium = profile.plan === "premium";
           freeUsesRemaining = profile.free_uses_remaining;
 
-          // Check if user has exhausted free uses
-          if (!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 0) {
+          // Check if user has exhausted free uses (authenticated users must have valid free_uses_remaining)
+          if (!isPremium && (freeUsesRemaining === null || freeUsesRemaining <= 0)) {
             res.status(403).json({
               error: "Free trial limit reached. Please subscribe to continue.",
               code: "TRIAL_LIMIT_REACHED"
