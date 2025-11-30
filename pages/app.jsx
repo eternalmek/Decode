@@ -40,7 +40,7 @@ const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
             Premium
           </span>
         )}
-        {!isPremium && (
+        {session && !isPremium && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
             <Sparkles className="w-3 h-3" />
             {profileLoading || freeUsesRemaining === null ? (
