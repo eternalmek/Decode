@@ -181,6 +181,7 @@ export default function AppPage() {
   const [result, setResult] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [freeUsesRemaining, setFreeUsesRemaining] = useState(null);
 
   const fetchProfile = async (token) => {
     try {
@@ -192,6 +193,9 @@ export default function AppPage() {
       if (res.ok) {
         const profile = await res.json();
         setIsPremium(profile.plan === 'premium');
+        if (profile.free_uses_remaining !== undefined) {
+          setFreeUsesRemaining(profile.free_uses_remaining);
+        }
       }
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -237,23 +241,44 @@ export default function AppPage() {
   const handleAnalyze = async () => {
     if (!input.trim()) return;
 
+    // Check usage limits for non-premium users
+    if (!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 0) {
+      setShowPaywall(true);
+      return;
+    }
+
     setAnalyzing(true);
     setResult(null);
 
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
       const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ input }),
       });
 
       if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || "Analysis failed");
+        const errData = await res.json().catch(() => ({}));
+        if (errData.code === "TRIAL_LIMIT_REACHED") {
+          setShowPaywall(true);
+          setAnalyzing(false);
+          return;
+        }
+        throw new Error(errData.error || "Analysis failed");
       }
 
       const data = await res.json();
       setResult(data);
+
+      // Decrement local state for usage tracking
+      if (!isPremium && freeUsesRemaining !== null) {
+        setFreeUsesRemaining(freeUsesRemaining - 1);
+      }
     } catch (err) {
       console.error("Analyze error:", err);
       alert("Analysis failed. Please try again.");

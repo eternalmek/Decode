@@ -7,8 +7,13 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT,
   plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'premium')),
   stripe_customer_id TEXT,
+  free_uses_remaining INTEGER DEFAULT 3,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration: Add free_uses_remaining column if it doesn't exist
+-- Run this separately if updating an existing database
+-- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS free_uses_remaining INTEGER DEFAULT 3;
 
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -31,8 +36,8 @@ CREATE INDEX IF NOT EXISTS idx_profiles_stripe_customer_id ON profiles(stripe_cu
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, plan)
-  VALUES (NEW.id, NEW.email, 'free')
+  INSERT INTO public.profiles (id, email, plan, free_uses_remaining)
+  VALUES (NEW.id, NEW.email, 'free', 3)
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;

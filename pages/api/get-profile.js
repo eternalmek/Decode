@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     // Get user's profile
     let { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, plan, stripe_customer_id, created_at")
+      .select("id, email, plan, stripe_customer_id, free_uses_remaining, created_at")
       .eq("id", user.id)
       .single();
 
@@ -61,6 +61,7 @@ export default async function handler(req, res) {
           id: user.id,
           email: user.email,
           plan: "free",
+          free_uses_remaining: 3,
         })
         .select()
         .single();
