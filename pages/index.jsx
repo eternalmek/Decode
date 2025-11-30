@@ -843,7 +843,7 @@ export default function App() {
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={'Paste your conversation here...\n\nExample:\nHim: "I\'ve been really busy lately"\nMe: "No problem, just let me know when you\'re free"\nHim: "Sure, I\'ll text you"'}
+                placeholder="Paste your conversation here..."
                 className="w-full h-48 p-6 text-lg text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none"
                 disabled={loading}
               />
