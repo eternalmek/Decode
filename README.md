@@ -4,7 +4,7 @@
 This repo demonstrates a Next.js page that:
 - Calls OpenAI server-side (pages/api/analyze) to analyze message conversations and returns structured JSON.
 - Uses Stripe Checkout (pages/api/create-checkout-session) to subscribe users to a single monthly premium plan ($9.99 / month).
-- Frontend (pages/index.jsx) allows one free analysis, then prompts the user to subscribe.
+- Frontend (pages/index.jsx) allows three free analyses, then prompts the user to subscribe.
 
 Setup
 1. Copy .env.example to .env.local and set:
