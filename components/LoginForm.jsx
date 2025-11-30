@@ -1,6 +1,5 @@
 // components/LoginForm.jsx
 import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { supabase } from '../lib/supabaseClient';
 import { Gift, Check, Star, Shield, Zap, Users, Sparkles, Crown, ArrowRight, MessageSquare, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
