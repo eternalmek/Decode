@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 
-const Navbar = ({ session, isPremium, freeUsesRemaining }) => (
+const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -40,12 +40,18 @@ const Navbar = ({ session, isPremium, freeUsesRemaining }) => (
             Premium
           </span>
         )}
-        {!isPremium && freeUsesRemaining !== null && (
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
+        {session && !isPremium && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
             <Sparkles className="w-3 h-3" />
-            <span className="font-bold">{10 - freeUsesRemaining}</span>
-            <span className="text-blue-400">/</span>
-            <span>10</span>
+            {profileLoading || freeUsesRemaining === null ? (
+              <span className="font-bold">...</span>
+            ) : (
+              <>
+                <span className="font-bold">{10 - freeUsesRemaining}</span>
+                <span className="text-blue-400">/</span>
+                <span>10</span>
+              </>
+            )}
           </span>
         )}
         <a
@@ -212,8 +218,10 @@ export default function AppPage() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [freeUsesRemaining, setFreeUsesRemaining] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchProfile = async (token) => {
+    setProfileLoading(true);
     try {
       const res = await fetch('/api/get-profile', {
         headers: {
@@ -229,6 +237,8 @@ export default function AppPage() {
       }
     } catch (err) {
       console.error('Error fetching profile:', err);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -271,8 +281,14 @@ export default function AppPage() {
   const handleAnalyze = async () => {
     if (!input.trim()) return;
 
+    // Wait for profile to load before checking limits
+    if (profileLoading) {
+      return;
+    }
+
     // Check usage limits for non-premium users
-    if (!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 0) {
+    // Block if not premium and either no data or no uses left
+    if (!isPremium && (freeUsesRemaining === null || freeUsesRemaining <= 0)) {
       setShowPaywall(true);
       return;
     }
@@ -388,7 +404,7 @@ export default function AppPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} />
+      <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
 
       {showPaywall && (
         <PaywallModal
