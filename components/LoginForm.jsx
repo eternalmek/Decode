@@ -3,6 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Gift, Check, Star, Shield, Zap, Users, Sparkles, Crown, ArrowRight, MessageSquare } from 'lucide-react';
 
+// Constants
+const FREE_PLAN_LIMIT = 10;
+const REDIRECT_DELAY_MS = 1500;
+
 const LoginForm = () => {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
@@ -15,7 +19,7 @@ const LoginForm = () => {
   const [profile, setProfile] = useState(null);
   const [redirecting, setRedirecting] = useState(false);
 
-  // Fetch user profile data
+  // Fetch user profile data from the server
   const fetchProfile = async (accessToken) => {
     try {
       const res = await fetch('/api/get-profile', {
@@ -69,25 +73,6 @@ const LoginForm = () => {
     };
   }, []);
 
-  // Create profile after successful authentication
-  const ensureProfile = async (accessToken) => {
-    try {
-      const res = await fetch('/api/get-profile', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-        return data;
-      }
-    } catch (err) {
-      console.error('Error ensuring profile:', err);
-    }
-    return null;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -110,12 +95,12 @@ const LoginForm = () => {
         // If email confirmation is disabled, user will be logged in immediately
         if (data.session) {
           setSession(data.session);
-          const profileData = await ensureProfile(data.session.access_token);
+          await fetchProfile(data.session.access_token);
           setMessage('Account created successfully! Redirecting...');
           setRedirecting(true);
           setTimeout(() => {
             window.location.href = '/app';
-          }, 1500);
+          }, REDIRECT_DELAY_MS);
         } else {
           setMessage('Check your email to confirm your account.');
         }
@@ -129,12 +114,12 @@ const LoginForm = () => {
         // Ensure profile exists and get data
         if (data.session) {
           setSession(data.session);
-          const profileData = await ensureProfile(data.session.access_token);
+          await fetchProfile(data.session.access_token);
           setMessage('Welcome back! Redirecting...');
           setRedirecting(true);
           setTimeout(() => {
             window.location.href = '/app';
-          }, 1500);
+          }, REDIRECT_DELAY_MS);
         }
       }
     } catch (err) {
@@ -171,8 +156,8 @@ const LoginForm = () => {
   // Show logged-in state with usage counter
   if (session && profile && !redirecting) {
     const isPremium = profile.plan === 'premium';
-    const freeUsesRemaining = profile.free_uses_remaining ?? 10;
-    const usedAnalyses = 10 - freeUsesRemaining;
+    const freeUsesRemaining = profile.free_uses_remaining ?? FREE_PLAN_LIMIT;
+    const usedAnalyses = FREE_PLAN_LIMIT - freeUsesRemaining;
 
     return (
       <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4 py-12">
@@ -206,13 +191,13 @@ const LoginForm = () => {
                       <Sparkles className="w-5 h-5" />
                       <span className="font-semibold">Free Plan</span>
                     </div>
-                    <span className="text-blue-600 font-bold">{usedAnalyses}/10</span>
+                    <span className="text-blue-600 font-bold">{usedAnalyses}/{FREE_PLAN_LIMIT}</span>
                   </div>
                   {/* Progress bar */}
                   <div className="w-full bg-blue-100 rounded-full h-2 mb-2">
                     <div 
                       className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(usedAnalyses / 10) * 100}%` }}
+                      style={{ width: `${(usedAnalyses / FREE_PLAN_LIMIT) * 100}%` }}
                     ></div>
                   </div>
                   <p className="text-blue-600 text-sm">
