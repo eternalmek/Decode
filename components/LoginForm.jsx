@@ -3,6 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Gift, Check, Star, Shield, Zap, Users, Sparkles, Crown, ArrowRight, MessageSquare } from 'lucide-react';
 
+const LogoHeader = () => (
+  <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <div className="max-w-5xl mx-auto px-4 h-16 flex items-center">
+      <a
+        href="/"
+        className="flex items-center gap-2 cursor-pointer"
+      >
+        <div className="bg-blue-600 p-1.5 rounded-lg">
+          <MessageSquare className="w-5 h-5 text-white" />
+        </div>
+        <span className="font-bold text-xl tracking-tight text-gray-900">
+          Decodr.
+        </span>
+      </a>
+    </div>
+  </div>
+);
+
 // Constants
 const FREE_PLAN_LIMIT = 10;
 const REDIRECT_DELAY_MS = 1500;
@@ -144,10 +162,13 @@ const LoginForm = () => {
   // Show loading spinner while checking session
   if (checkingSession) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading...</p>
+      <div className="min-h-screen bg-[#FAFAFA]">
+        <LogoHeader />
+        <div className="flex items-center justify-center min-h-screen pt-16">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading...</p>
+          </div>
         </div>
       </div>
     );
@@ -160,7 +181,9 @@ const LoginForm = () => {
     const usedAnalyses = FREE_PLAN_LIMIT - freeUsesRemaining;
 
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-[#FAFAFA]">
+        <LogoHeader />
+        <div className="flex items-center justify-center min-h-screen px-4 py-12 pt-20">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
             {/* Header */}
@@ -236,12 +259,15 @@ const LoginForm = () => {
             </a>
           </div>
         </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#FAFAFA]">
+      <LogoHeader />
+      <div className="flex items-center justify-center min-h-screen px-4 py-12 pt-20">
       <div className="w-full max-w-4xl flex flex-col md:flex-row gap-8">
         {/* Benefits Panel - only show on signup */}
         {mode === 'signup' && (
@@ -480,6 +506,7 @@ const LoginForm = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
