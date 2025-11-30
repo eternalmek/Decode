@@ -70,7 +70,6 @@ const Navbar = ({ session, onLogout, isPremium }) => {
               Premium
             </span>
           )}
-
           {session ? (
             <>
               <a
@@ -178,34 +177,6 @@ const Hero = ({ session }) => (
         <Check className="w-4 h-4 text-green-500" />
         100% private
       </span>
-    </div>
-  </div>
-);
-
-const SignupBanner = ({ usageCount }) => (
-  <div className="max-w-3xl mx-auto mb-8 px-4">
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white relative overflow-hidden shadow-xl shadow-blue-500/20">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-      <div className="relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Gift className="w-5 h-5" />
-              <span className="font-semibold">You&apos;ve used {usageCount} of 3 free analyses</span>
-            </div>
-            <p className="text-blue-100 text-sm">
-              Create a free account to unlock <span className="font-bold text-white">10 more analyses</span> instantly!
-            </p>
-          </div>
-          <a
-            href="/login?mode=signup"
-            className="flex-shrink-0 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg hover:scale-105 active:scale-95"
-          >
-            Get 10 Free Now →
-          </a>
-        </div>
-      </div>
     </div>
   </div>
 );
@@ -821,7 +792,6 @@ export default function App() {
         <main className="max-w-5xl mx-auto px-4 pt-6 pb-20">
           {!result && <Hero session={session} />}
           {!result && !session && <SocialProof />}
-          {!result && !session && usageCount > 0 && usageCount < 3 && <SignupBanner usageCount={usageCount} />}
 
         <div className={`transition-all duration-500 ${result ? "pt-24" : ""}`}>
           <div className="relative max-w-3xl mx-auto">
@@ -933,11 +903,6 @@ export default function App() {
                 </>
               ) : !isPremium ? (
                 <>
-                  <p className="text-gray-400 text-sm mb-2">
-                    {freeUsesRemaining !== null && freeUsesRemaining > 0 
-                      ? <span>Used <span className="font-bold text-gray-600">{10 - freeUsesRemaining}/10</span> free analyses</span>
-                      : 'Want unlimited access?'}
-                  </p>
                   <button
                     onClick={() => setShowPaywall(true)}
                     className="text-blue-600 font-semibold hover:text-blue-700 hover:underline"
