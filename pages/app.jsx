@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import ChatWidget from '../components/ChatWidget';
 
-const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
+const Navbar = ({ session, isPremium }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -44,20 +44,7 @@ const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
             Premium
           </span>
         )}
-        {session && !isPremium && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
-            <Sparkles className="w-3 h-3" />
-            {profileLoading || freeUsesRemaining === null ? (
-              <span className="font-bold">...</span>
-            ) : (
-              <>
-                <span className="font-bold">{10 - freeUsesRemaining}</span>
-                <span className="text-blue-400">/</span>
-                <span>10</span>
-              </>
-            )}
-          </span>
-        )}
+
         <a
           href="/account"
           className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors flex items-center gap-1"
@@ -422,7 +409,7 @@ export default function AppPage() {
       </Head>
       
       <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-        <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
+        <Navbar session={session} isPremium={isPremium} />
 
         {showPaywall && (
           <PaywallModal
