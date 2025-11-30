@@ -1,7 +1,8 @@
 // components/LoginForm.jsx
 import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
 import { supabase } from '../lib/supabaseClient';
-import { Gift, Check, Star, Shield, Zap, Users, Sparkles, Crown, ArrowRight, MessageSquare } from 'lucide-react';
+import { Gift, Check, Star, Shield, Zap, Users, Sparkles, Crown, ArrowRight, MessageSquare, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 // Constants
 const FREE_PLAN_LIMIT = 10;
@@ -11,6 +12,7 @@ const LoginForm = () => {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [message, setMessage] = useState(null);
@@ -18,6 +20,24 @@ const LoginForm = () => {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [redirecting, setRedirecting] = useState(false);
+
+  // Password strength calculation
+  const getPasswordStrength = (pwd) => {
+    if (!pwd) return { score: 0, label: '', color: '' };
+    let score = 0;
+    if (pwd.length >= 6) score++;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    
+    if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-red-500' };
+    if (score <= 2) return { score: 2, label: 'Fair', color: 'bg-yellow-500' };
+    if (score <= 3) return { score: 3, label: 'Good', color: 'bg-blue-500' };
+    return { score: 4, label: 'Strong', color: 'bg-green-500' };
+  };
+
+  const passwordStrength = mode === 'signup' ? getPasswordStrength(password) : null;
 
   // Fetch user profile data from the server
   const fetchProfile = async (accessToken) => {
@@ -394,21 +414,58 @@ const LoginForm = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  required
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Your password"
-                  disabled={loading || redirecting}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    required
+                    minLength={mode === 'signup' ? 6 : undefined}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder={mode === 'signup' ? 'Create a password (min 6 chars)' : 'Your password'}
+                    disabled={loading || redirecting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                
+                {/* Password strength indicator for signup */}
+                {mode === 'signup' && password && (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                          style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-medium ${
+                        passwordStrength.score <= 1 ? 'text-red-500' :
+                        passwordStrength.score <= 2 ? 'text-yellow-600' :
+                        passwordStrength.score <= 3 ? 'text-blue-500' : 'text-green-500'
+                      }`}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    {passwordStrength.score < 3 && (
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Add uppercase, numbers, or symbols
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Error message */}
               {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm flex items-start gap-2 border border-red-100">
-                  <span className="flex-shrink-0 mt-0.5">⚠️</span>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}

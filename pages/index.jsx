@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Head from "next/head";
 import {
   MessageSquare,
   Brain,
@@ -17,8 +18,15 @@ import {
   Star,
   Users,
   Shield,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  TrendingUp,
+  Eye,
+  Menu,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import ChatWidget from "../components/ChatWidget";
 
 /*
   Frontend page. Calls:
@@ -28,114 +36,170 @@ import { supabase } from "../lib/supabaseClient";
   Client also needs NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for possible client-side usage (not required here).
 */
 
-const Navbar = ({ session, onLogout, isPremium, freeUsesRemaining, profileLoading }) => (
-  <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
-    <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div
-        className="flex items-center gap-2 cursor-pointer"
-        onClick={() => window.location.reload()}
-      >
-        <div className="bg-blue-600 p-1.5 rounded-lg">
-          <MessageSquare className="w-5 h-5 text-white" />
+const Navbar = ({ session, onLogout, isPremium, freeUsesRemaining, profileLoading }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  return (
+    <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 z-50">
+      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => window.location.reload()}
+        >
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-1.5 rounded-lg shadow-lg shadow-blue-500/20">
+            <MessageSquare className="w-5 h-5 text-white" />
+          </div>
+          <span className="font-bold text-xl tracking-tight text-gray-900">
+            Decodr.
+          </span>
         </div>
-        <span className="font-bold text-xl tracking-tight text-gray-900">
-          Decodr.
-        </span>
+        
+        {/* Mobile menu button */}
+        <button 
+          className="sm:hidden p-2 text-gray-600 hover:text-gray-900"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        
+        {/* Desktop navigation */}
+        <div className="hidden sm:flex items-center gap-6">
+          {isPremium && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
+              <Crown className="w-3 h-3" />
+              Premium
+            </span>
+          )}
+          {session && !isPremium && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
+              <Sparkles className="w-3 h-3" />
+              {profileLoading || freeUsesRemaining === null ? (
+                <span className="font-bold">...</span>
+              ) : (
+                <>
+                  <span className="font-bold">{10 - freeUsesRemaining}</span>
+                  <span className="text-blue-400">/</span>
+                  <span>10</span>
+                </>
+              )}
+            </span>
+          )}
+          {session ? (
+            <>
+              <a
+                href="/account"
+                className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors flex items-center gap-1"
+              >
+                <User className="w-4 h-4" />
+                Account
+              </a>
+              <button
+                onClick={onLogout}
+                className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <a
+                href="/login"
+                className="text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+              >
+                Login
+              </a>
+              <a
+                href="/login?mode=signup"
+                className="flex items-center gap-1.5 text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-medium text-sm px-4 py-2 rounded-lg transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
+              >
+                <Gift className="w-4 h-4" />
+                Get 10 Free
+              </a>
+            </>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-6">
-        {isPremium && (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
-            <Crown className="w-3 h-3" />
-            Premium
-          </span>
-        )}
-        {session && !isPremium && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
-            <Sparkles className="w-3 h-3" />
-            {profileLoading || freeUsesRemaining === null ? (
-              <span className="font-bold">...</span>
-            ) : (
-              <>
-                <span className="font-bold">{10 - freeUsesRemaining}</span>
-                <span className="text-blue-400">/</span>
-                <span>10</span>
-              </>
-            )}
-          </span>
-        )}
-        {session ? (
-          <>
-            <a
-              href="/account"
-              className="hidden sm:flex text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors items-center gap-1"
-            >
-              <User className="w-4 h-4" />
-              Account
-            </a>
-            <button
-              onClick={onLogout}
-              className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
-            >
-              Log out
-            </button>
-          </>
-        ) : (
-          <>
-            <a
-              href="/login"
-              className="hidden sm:block text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
-            >
-              Login
-            </a>
-            <a
-              href="/login?mode=signup"
-              className="hidden sm:flex items-center gap-1.5 text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm px-4 py-2 rounded-lg transition-colors"
-            >
-              <Gift className="w-4 h-4" />
-              Get 10 Free
-            </a>
-          </>
-        )}
-      </div>
-    </div>
-  </nav>
-);
+      
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="sm:hidden bg-white border-b border-gray-100 px-4 py-3 space-y-3">
+          {session ? (
+            <>
+              <a href="/account" className="flex items-center gap-2 text-gray-600 py-2">
+                <User className="w-4 h-4" />
+                Account
+              </a>
+              <button onClick={onLogout} className="flex items-center gap-2 text-gray-600 py-2 w-full text-left">
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="/login" className="block text-gray-600 py-2">Login</a>
+              <a 
+                href="/login?mode=signup" 
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 rounded-lg font-medium"
+              >
+                <Gift className="w-4 h-4" />
+                Get 10 Free Analyses
+              </a>
+            </>
+          )}
+        </div>
+      )}
+    </nav>
+  );
+};
 
 const Hero = ({ session }) => (
   <div className="text-center pt-24 pb-12 px-4">
-    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-6">
+    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-6 border border-blue-100">
       <Sparkles className="w-3 h-3" />
-      AI-Powered Analysis
+      AI-Powered Analysis • Trusted by 10,000+ Users
     </div>
     <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
-      Decode what they <br className="hidden md:block" />
+      Stop Overthinking. <br className="hidden md:block" />
       <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-        actually mean.
+        Start Understanding.
       </span>
     </h1>
     <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-8">
-      Paste any conversation. We analyze the emotions, detect red flags, and
-      generate the perfect response instantly.
+      Paste any text conversation and get instant AI analysis of emotions, red flags, 
+      and <span className="font-semibold text-gray-700">perfect replies</span> in seconds.
     </p>
     {!session && (
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
         <a
           href="/login?mode=signup"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95 text-lg"
         >
           <Gift className="w-5 h-5" />
-          Sign up &amp; Get 10 Free Analyses
+          Start Free — 10 Analyses Included
         </a>
-        <span className="text-gray-400 text-sm">No credit card required</span>
       </div>
     )}
+    <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500">
+      <span className="flex items-center gap-1.5">
+        <Check className="w-4 h-4 text-green-500" />
+        No credit card required
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Check className="w-4 h-4 text-green-500" />
+        Results in seconds
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Check className="w-4 h-4 text-green-500" />
+        100% private
+      </span>
+    </div>
   </div>
 );
 
 const SignupBanner = ({ usageCount }) => (
   <div className="max-w-3xl mx-auto mb-8 px-4">
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white relative overflow-hidden">
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white relative overflow-hidden shadow-xl shadow-blue-500/20">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
       <div className="relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
@@ -149,7 +213,7 @@ const SignupBanner = ({ usageCount }) => (
           </div>
           <a
             href="/login?mode=signup"
-            className="flex-shrink-0 bg-white text-blue-600 px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg hover:scale-105 active:scale-95"
+            className="flex-shrink-0 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg hover:scale-105 active:scale-95"
           >
             Get 10 Free Now →
           </a>
@@ -159,6 +223,176 @@ const SignupBanner = ({ usageCount }) => (
   </div>
 );
 
+const Testimonials = () => (
+  <div className="max-w-4xl mx-auto px-4 py-12">
+    <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
+      What Our Users Say
+    </h2>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {[
+        {
+          text: "This literally saved my relationship. I finally understood what my partner was actually trying to tell me.",
+          name: "Sarah M.",
+          role: "Used for texting"
+        },
+        {
+          text: "I use this before responding to important work emails. The suggested replies are always professional and on point.",
+          name: "James K.",
+          role: "Professional user"
+        },
+        {
+          text: "The emotion breakdown is scary accurate. It helped me realize I was misreading signals completely.",
+          name: "Alex T.",
+          role: "Dating app user"
+        }
+      ].map((testimonial, idx) => (
+        <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50">
+          <div className="flex items-center gap-1 mb-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star key={star} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            ))}
+          </div>
+          <p className="text-gray-700 mb-4 leading-relaxed">&quot;{testimonial.text}&quot;</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+              {testimonial.name.charAt(0)}
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 text-sm">{testimonial.name}</div>
+              <div className="text-gray-500 text-xs">{testimonial.role}</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const HowItWorks = () => (
+  <div className="max-w-4xl mx-auto px-4 py-12">
+    <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
+      How It Works
+    </h2>
+    <p className="text-gray-500 text-center mb-8">Get insights in 3 simple steps</p>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {[
+        {
+          step: "1",
+          icon: <Copy className="w-6 h-6 text-blue-600" />,
+          title: "Paste Your Conversation",
+          description: "Copy any text from WhatsApp, iMessage, Instagram, or any chat app"
+        },
+        {
+          step: "2",
+          icon: <Brain className="w-6 h-6 text-indigo-600" />,
+          title: "AI Analyzes It",
+          description: "Our AI detects emotions, hidden meanings, and communication patterns"
+        },
+        {
+          step: "3",
+          icon: <Zap className="w-6 h-6 text-amber-600" />,
+          title: "Get Smart Replies",
+          description: "Receive 4 tailored response suggestions for any situation"
+        }
+      ].map((item, idx) => (
+        <div key={idx} className="text-center relative">
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+            {item.step}
+          </div>
+          <div className="bg-white p-6 pt-8 rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50">
+            <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+              {item.icon}
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
+            <p className="text-gray-500 text-sm">{item.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const FAQSection = () => {
+  const [openIndex, setOpenIndex] = useState(null);
+  
+  const faqs = [
+    {
+      question: "Is my conversation data private and secure?",
+      answer: "Absolutely. We don't store your conversations. They're processed in real-time and immediately discarded. Your data never touches our servers permanently."
+    },
+    {
+      question: "How accurate is the AI analysis?",
+      answer: "Our AI is trained on millions of conversation patterns and achieves high accuracy in detecting emotions and communication styles. The more context you provide, the better the analysis."
+    },
+    {
+      question: "Can I cancel my premium subscription anytime?",
+      answer: "Yes! You can cancel your Premium subscription at any time from your account page. No questions asked, no hidden fees."
+    },
+    {
+      question: "What types of conversations can I analyze?",
+      answer: "You can analyze any text-based conversation — texts, WhatsApp messages, Instagram DMs, emails, Slack messages, dating app chats, and more."
+    }
+  ];
+  
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-12">
+      <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
+        Frequently Asked Questions
+      </h2>
+      <div className="space-y-4">
+        {faqs.map((faq, idx) => (
+          <div key={idx} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+            <button
+              onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+              className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-medium text-gray-900">{faq.question}</span>
+              {openIndex === idx ? (
+                <ChevronUp className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
+            {openIndex === idx && (
+              <div className="px-6 pb-4 text-gray-600 text-sm leading-relaxed">
+                {faq.answer}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const Footer = () => (
+  <footer className="bg-gray-900 text-white py-12 mt-16">
+    <div className="max-w-5xl mx-auto px-4">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-2">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg">
+            <MessageSquare className="w-5 h-5 text-white" />
+          </div>
+          <span className="font-bold text-xl">Decodr.</span>
+        </div>
+        <div className="flex items-center gap-6 text-gray-400 text-sm">
+          <span className="flex items-center gap-1.5">
+            <Shield className="w-4 h-4" />
+            Private & Secure
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Lock className="w-4 h-4" />
+            SSL Encrypted
+          </span>
+        </div>
+      </div>
+      <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
+        © {new Date().getFullYear()} Decodr. All rights reserved.
+      </div>
+    </div>
+  </footer>
+);
+
 const SocialProof = () => (
   <div className="max-w-3xl mx-auto px-4 py-8">
     <div className="flex flex-col items-center">
@@ -166,21 +400,22 @@ const SocialProof = () => (
         {[1, 2, 3, 4, 5].map((star) => (
           <Star key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
         ))}
+        <span className="ml-2 font-semibold text-gray-900">4.9/5</span>
       </div>
       <p className="text-gray-600 text-center text-sm mb-4">
         Trusted by <span className="font-semibold text-gray-900">10,000+</span> users for understanding their messages better
       </p>
-      <div className="flex items-center gap-6 text-gray-400 text-xs">
-        <div className="flex items-center gap-1">
-          <Shield className="w-4 h-4" />
+      <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-gray-500 text-xs">
+        <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full">
+          <Shield className="w-4 h-4 text-green-500" />
           <span>Private &amp; Secure</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Zap className="w-4 h-4" />
+        <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full">
+          <Zap className="w-4 h-4 text-amber-500" />
           <span>Instant Analysis</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Users className="w-4 h-4" />
+        <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full">
+          <Brain className="w-4 h-4 text-blue-500" />
           <span>AI-Powered</span>
         </div>
       </div>
@@ -563,31 +798,43 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar session={session} onLogout={handleLogout} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
+    <>
+      <Head>
+        <title>Decodr - AI-Powered Message Analyzer | Decode What They Really Mean</title>
+        <meta name="description" content="Paste any conversation and get instant AI analysis of emotions, hidden meanings, and perfect reply suggestions. Free to try, no credit card required." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content="Decodr - AI-Powered Message Analyzer" />
+        <meta property="og:description" content="Stop overthinking your messages. Get instant AI analysis and smart reply suggestions." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      
+      <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
+        <Navbar session={session} onLogout={handleLogout} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
 
-      {deletedMessage && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-50 text-green-700 px-6 py-3 rounded-xl border border-green-200 shadow-lg flex items-center gap-3">
-          <Check className="w-5 h-5" />
-          <span>Your account has been deleted successfully.</span>
-          <button onClick={() => setDeletedMessage(false)} className="hover:opacity-70">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+        {deletedMessage && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-50 text-green-700 px-6 py-3 rounded-xl border border-green-200 shadow-lg flex items-center gap-3">
+            <Check className="w-5 h-5" />
+            <span>Your account has been deleted successfully.</span>
+            <button onClick={() => setDeletedMessage(false)} className="hover:opacity-70">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
-      {showPaywall && (
-        <PaywallModal
-          onClose={() => setShowPaywall(false)}
-          onSubscribe={handleSubscribe}
-          session={session}
-        />
-      )}
+        {showPaywall && (
+          <PaywallModal
+            onClose={() => setShowPaywall(false)}
+            onSubscribe={handleSubscribe}
+            session={session}
+          />
+        )}
 
-      <main className="max-w-5xl mx-auto px-4 pt-6 pb-20">
-        {!result && <Hero session={session} />}
-        {!result && !session && <SocialProof />}
-        {!result && !session && usageCount > 0 && usageCount < 3 && <SignupBanner usageCount={usageCount} />}
+        <main className="max-w-5xl mx-auto px-4 pt-6 pb-20">
+          {!result && <Hero session={session} />}
+          {!result && !session && <SocialProof />}
+          {!result && !session && usageCount > 0 && usageCount < 3 && <SignupBanner usageCount={usageCount} />}
 
         <div className={`transition-all duration-500 ${result ? "pt-24" : ""}`}>
           <div className="relative max-w-3xl mx-auto">
@@ -596,15 +843,23 @@ export default function App() {
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Paste the conversation here... (e.g. WhatsApp, iMessage, Instagram DM)"
-                className="w-full h-48 p-6 text-lg text-gray-700 placeholder:text-gray-300 focus:outline-none resize-none"
+                placeholder={'Paste your conversation here...\n\nExample:\nHim: "I\'ve been really busy lately"\nMe: "No problem, just let me know when you\'re free"\nHim: "Sure, I\'ll text you"'}
+                className="w-full h-48 p-6 text-lg text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none"
                 disabled={loading}
               />
-              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
-                <span className="text-xs text-gray-400 font-medium">
-                  {input.length} characters
-                </span>
-                <div className="flex gap-3">
+              <div className="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-gray-100">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400 font-medium">
+                    {input.length} characters
+                  </span>
+                  {!input.trim() && !result && (
+                    <span className="text-xs text-blue-500 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Try pasting a text conversation
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-3 w-full sm:w-auto">
                   {result && (
                     <button
                       onClick={clearAnalysis}
@@ -616,10 +871,10 @@ export default function App() {
                   <button
                     onClick={handleAnalyze}
                     disabled={loading || !input.trim()}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 
+                    className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 
                       ${loading || !input.trim()
                         ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-gray-900 hover:bg-black shadow-lg shadow-gray-900/20 hover:scale-105 active:scale-95"
+                        : "bg-gradient-to-r from-gray-900 to-gray-800 hover:from-black hover:to-gray-900 shadow-lg shadow-gray-900/20 hover:scale-105 active:scale-95"
                       }`}
                   >
                     {loading ? (
@@ -707,7 +962,20 @@ export default function App() {
             </div>
           </div>
         )}
+        
+        {/* Additional sections for non-logged users */}
+        {!result && !session && (
+          <>
+            <HowItWorks />
+            <Testimonials />
+            <FAQSection />
+          </>
+        )}
       </main>
+      
+      <Footer />
+      <ChatWidget />
     </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 // pages/app.jsx (protected page)
 import { useEffect, useState } from 'react';
+import Head from 'next/head';
 import { supabase } from '../lib/supabaseClient';
 import {
   MessageSquare,
@@ -17,7 +18,10 @@ import {
   Gift,
   Shield,
   X,
+  Share2,
+  Menu,
 } from 'lucide-react';
+import ChatWidget from '../components/ChatWidget';
 
 const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
@@ -402,119 +406,182 @@ export default function AppPage() {
     );
   }
 
+  // Sample prompts for empty state
+  const samplePrompts = [
+    "Him: 'I need some space right now'\nMe: 'Okay, take your time'\nHim: 'Thanks for understanding'",
+    "Her: 'We should hang out sometime'\nMe: 'Yeah for sure! When are you free?'\nHer: 'I'll let you know'",
+    "Boss: 'Can we chat later?'\nMe: 'Sure, is everything okay?'\nBoss: 'Yes, just want to discuss something'"
+  ];
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
+    <>
+      <Head>
+        <title>Analyze Messages - Decodr</title>
+        <meta name="description" content="Paste your conversation and get instant AI-powered analysis of emotions, hidden meanings, and smart reply suggestions." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      
+      <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
+        <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
 
-      {showPaywall && (
-        <PaywallModal
-          onClose={() => setShowPaywall(false)}
-          onSubscribe={handleSubscribe}
-        />
-      )}
+        {showPaywall && (
+          <PaywallModal
+            onClose={() => setShowPaywall(false)}
+            onSubscribe={handleSubscribe}
+          />
+        )}
 
-      <main className="max-w-5xl mx-auto px-4 pt-24 pb-20">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Decodr</h1>
-          <p className="text-gray-500">You are logged in as {session.user.email}</p>
-          {!isPremium && freeUsesRemaining !== null && (
-            <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200 shadow-sm">
-              <Sparkles className="w-4 h-4" />
-              {freeUsesRemaining > 0 
-                ? <span>Used <span className="font-bold">{10 - freeUsesRemaining}/10</span> free analyses</span>
-                : 'No free analyses left'}
+        <main className="max-w-5xl mx-auto px-4 pt-24 pb-20">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Analyze Your Conversation</h1>
+            <p className="text-gray-500">Logged in as {session.user.email}</p>
+            {!isPremium && freeUsesRemaining !== null && (
+              <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200 shadow-sm">
+                <Sparkles className="w-4 h-4" />
+                {freeUsesRemaining > 0 
+                  ? <span><span className="font-bold">{freeUsesRemaining}</span> free analyses remaining</span>
+                  : <span>Upgrade to Premium for unlimited access</span>}
+              </div>
+            )}
+            {isPremium && (
+              <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-full text-sm font-medium border border-amber-200 shadow-sm">
+                <Crown className="w-4 h-4" />
+                <span>Unlimited Premium Access</span>
+              </div>
+            )}
+          </div>
+
+          <div className="relative max-w-3xl mx-auto">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-indigo-100 transform rotate-1 rounded-3xl opacity-50 blur-xl transition-all duration-500"></div>
+            <div className="relative bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={'Paste your conversation here...\n\nExample:\nHim: "I\'ve been really busy lately"\nMe: "No problem, just let me know when you\'re free"\nHim: "Sure, I\'ll text you"'}
+                className="w-full h-48 p-6 text-lg text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none"
+                disabled={analyzing}
+              />
+              <div className="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-gray-100">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400 font-medium">
+                    {input.length} characters
+                  </span>
+                </div>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  {result && (
+                    <button
+                      onClick={clearAnalysis}
+                      className="text-sm font-medium text-gray-500 hover:text-gray-700 px-4 py-2"
+                    >
+                      Reset
+                    </button>
+                  )}
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={analyzing || !input.trim()}
+                    className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 
+                      ${analyzing || !input.trim()
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-gradient-to-r from-gray-900 to-gray-800 hover:from-black hover:to-gray-900 shadow-lg shadow-gray-900/20 hover:scale-105 active:scale-95"
+                      }`}
+                  >
+                    {analyzing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        Analyze Message
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Sample prompts when empty */}
+            {!input.trim() && !result && (
+              <div className="mt-6">
+                <p className="text-sm text-gray-500 text-center mb-3">Try one of these examples:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {samplePrompts.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setInput(prompt)}
+                      className="text-left p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all text-xs text-gray-600 hover:text-gray-900"
+                    >
+                      <span className="line-clamp-3">{prompt.substring(0, 80)}...</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {result && (
+            <div className="max-w-4xl mx-auto mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+              <div className="bg-white/60 backdrop-blur-xl border border-blue-100 p-8 rounded-3xl shadow-lg shadow-blue-900/5 mb-8 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-indigo-50 rounded-2xl">
+                    <Brain className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">The Hidden Meaning</h3>
+                    <p className="text-lg text-gray-700 leading-relaxed">{result.hidden_meaning}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                <div className="md:col-span-4 space-y-4">
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">Emotional Analysis</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {result.emotion_breakdown &&
+                      Object.entries(result.emotion_breakdown).map(([key, value]) => (
+                        <EmotionCard key={key} label={key} value={value} />
+                      ))}
+                  </div>
+                </div>
+
+                <div className="md:col-span-8">
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">Recommended Replies</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {result.recommended_replies &&
+                      Object.entries(result.recommended_replies).map(([key, value]) => (
+                        <ReplyCard key={key} type={key} text={value} />
+                      ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Upgrade prompt for free users */}
+              {!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 3 && (
+                <div className="mt-8 p-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl text-white text-center">
+                  <Crown className="w-8 h-8 mx-auto mb-3" />
+                  <h3 className="font-bold text-lg mb-2">Loving the insights?</h3>
+                  <p className="text-blue-100 mb-4">
+                    {freeUsesRemaining > 0 
+                      ? `You have ${freeUsesRemaining} free ${freeUsesRemaining === 1 ? 'analysis' : 'analyses'} left.`
+                      : "You've used all your free analyses."}
+                    {' '}Upgrade to Premium for unlimited access!
+                  </p>
+                  <button
+                    onClick={handleSubscribe}
+                    className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg hover:scale-105 active:scale-95"
+                  >
+                    Go Premium — $9.99/month
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </div>
-
-        <div className="relative max-w-3xl mx-auto">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-indigo-100 transform rotate-1 rounded-3xl opacity-50 blur-xl transition-all duration-500"></div>
-          <div className="relative bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste the conversation here... (e.g. WhatsApp, iMessage, Instagram DM)"
-              className="w-full h-48 p-6 text-lg text-gray-700 placeholder:text-gray-300 focus:outline-none resize-none"
-              disabled={analyzing}
-            />
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
-              <span className="text-xs text-gray-400 font-medium">
-                {input.length} characters
-              </span>
-              <div className="flex gap-3">
-                {result && (
-                  <button
-                    onClick={clearAnalysis}
-                    className="text-sm font-medium text-gray-500 hover:text-gray-700 px-4 py-2"
-                  >
-                    Reset
-                  </button>
-                )}
-                <button
-                  onClick={handleAnalyze}
-                  disabled={analyzing || !input.trim()}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 
-                    ${analyzing || !input.trim()
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-gray-900 hover:bg-black shadow-lg shadow-gray-900/20 hover:scale-105 active:scale-95"
-                    }`}
-                >
-                  {analyzing ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      Analyze Message
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {result && (
-          <div className="max-w-4xl mx-auto mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="bg-white/60 backdrop-blur-xl border border-blue-100 p-8 rounded-3xl shadow-lg shadow-blue-900/5 mb-8 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-indigo-50 rounded-2xl">
-                  <Brain className="w-6 h-6 text-indigo-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">The Hidden Meaning</h3>
-                  <p className="text-lg text-gray-700 leading-relaxed">{result.hidden_meaning}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              <div className="md:col-span-4 space-y-4">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">Emotional Analysis</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {result.emotion_breakdown &&
-                    Object.entries(result.emotion_breakdown).map(([key, value]) => (
-                      <EmotionCard key={key} label={key} value={value} />
-                    ))}
-                </div>
-              </div>
-
-              <div className="md:col-span-8">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">Recommended Replies</h3>
-                <div className="grid grid-cols-1 gap-4">
-                  {result.recommended_replies &&
-                    Object.entries(result.recommended_replies).map(([key, value]) => (
-                      <ReplyCard key={key} type={key} text={value} />
-                    ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
+        </main>
+        
+        <ChatWidget />
+      </div>
+    </>
   );
 }
