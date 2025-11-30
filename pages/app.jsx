@@ -41,9 +41,11 @@ const Navbar = ({ session, isPremium, freeUsesRemaining }) => (
           </span>
         )}
         {!isPremium && freeUsesRemaining !== null && (
-          <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
-            <Gift className="w-3 h-3" />
-            {freeUsesRemaining} free left
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
+            <Sparkles className="w-3 h-3" />
+            <span className="font-bold">{10 - freeUsesRemaining}</span>
+            <span className="text-blue-400">/</span>
+            <span>10</span>
           </span>
         )}
         <a
@@ -400,10 +402,10 @@ export default function AppPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Decodr</h1>
           <p className="text-gray-500">You are logged in as {session.user.email}</p>
           {!isPremium && freeUsesRemaining !== null && (
-            <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
-              <Gift className="w-4 h-4" />
+            <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200 shadow-sm">
+              <Sparkles className="w-4 h-4" />
               {freeUsesRemaining > 0 
-                ? `${freeUsesRemaining} free ${freeUsesRemaining === 1 ? 'analysis' : 'analyses'} remaining`
+                ? <span>Used <span className="font-bold">{10 - freeUsesRemaining}/10</span> free analyses</span>
                 : 'No free analyses left'}
             </div>
           )}
