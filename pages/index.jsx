@@ -13,6 +13,10 @@ import {
   User,
   Crown,
   X,
+  Gift,
+  Star,
+  Users,
+  Shield,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import ChatWidget from "../components/ChatWidget";
@@ -25,7 +29,7 @@ import ChatWidget from "../components/ChatWidget";
   Client also needs NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for possible client-side usage (not required here).
 */
 
-const Navbar = ({ setShowPricing, session, onLogout, isPremium }) => (
+const Navbar = ({ setShowPricing, session, onLogout, isPremium, freeUsesRemaining }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -54,6 +58,12 @@ const Navbar = ({ setShowPricing, session, onLogout, isPremium }) => (
             Premium
           </span>
         )}
+        {session && !isPremium && freeUsesRemaining !== null && (
+          <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
+            <Gift className="w-3 h-3" />
+            {freeUsesRemaining} free left
+          </span>
+        )}
         {session ? (
           <>
             <a
@@ -80,9 +90,10 @@ const Navbar = ({ setShowPricing, session, onLogout, isPremium }) => (
             </a>
             <a
               href="/login?mode=signup"
-              className="hidden sm:block text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm px-4 py-2 rounded-lg transition-colors"
+              className="hidden sm:flex items-center gap-1.5 text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm px-4 py-2 rounded-lg transition-colors"
             >
-              Sign up
+              <Gift className="w-4 h-4" />
+              Get 10 Free
             </a>
           </>
         )}
@@ -91,7 +102,7 @@ const Navbar = ({ setShowPricing, session, onLogout, isPremium }) => (
   </nav>
 );
 
-const Hero = () => (
+const Hero = ({ session }) => (
   <div className="text-center pt-24 pb-12 px-4">
     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-6">
       <Sparkles className="w-3 h-3" />
@@ -107,6 +118,74 @@ const Hero = () => (
       Paste any conversation. We analyze the emotions, detect red flags, and
       generate the perfect response instantly.
     </p>
+    {!session && (
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+        <a
+          href="/login?mode=signup"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95"
+        >
+          <Gift className="w-5 h-5" />
+          Sign up &amp; Get 10 Free Analyses
+        </a>
+        <span className="text-gray-400 text-sm">No credit card required</span>
+      </div>
+    )}
+  </div>
+);
+
+const SignupBanner = ({ usageCount }) => (
+  <div className="max-w-3xl mx-auto mb-8 px-4">
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+      <div className="relative z-10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Gift className="w-5 h-5" />
+              <span className="font-semibold">You&apos;ve used {usageCount} of 3 free analyses</span>
+            </div>
+            <p className="text-blue-100 text-sm">
+              Create a free account to unlock <span className="font-bold text-white">10 more analyses</span> instantly!
+            </p>
+          </div>
+          <a
+            href="/login?mode=signup"
+            className="flex-shrink-0 bg-white text-blue-600 px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg hover:scale-105 active:scale-95"
+          >
+            Get 10 Free Now →
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SocialProof = () => (
+  <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="flex flex-col items-center">
+      <div className="flex items-center gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+        ))}
+      </div>
+      <p className="text-gray-600 text-center text-sm mb-4">
+        Trusted by <span className="font-semibold text-gray-900">10,000+</span> users for understanding their messages better
+      </p>
+      <div className="flex items-center gap-6 text-gray-400 text-xs">
+        <div className="flex items-center gap-1">
+          <Shield className="w-4 h-4" />
+          <span>Private &amp; Secure</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Zap className="w-4 h-4" />
+          <span>Instant Analysis</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Users className="w-4 h-4" />
+          <span>AI-Powered</span>
+        </div>
+      </div>
+    </div>
   </div>
 );
 
@@ -169,45 +248,122 @@ const ReplyCard = ({ type, text }) => {
   );
 };
 
-const PaywallModal = ({ onClose, onSubscribe }) => (
+const PaywallModal = ({ onClose, onSubscribe, session }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" />
     <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
       <div className="p-8">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-indigo-50 rounded-2xl">
-            <Lock className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Premium</h2>
+        {!session ? (
+          /* Not logged in - prompt to sign up for free trials */
+          <div className="text-center">
+            <div className="inline-flex p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl mb-6">
+              <Gift className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Want More Free Analyses?</h2>
             <p className="text-gray-600 mb-6">
-              Unlock unlimited analysis, advanced detection, and priority processing.
-              One plan only — $9.99 / month. Cancel anytime.
+              Create a free account and get <span className="font-bold text-blue-600">10 analyses</span> on us!
+              No credit card required.
             </p>
-
-            <div className="rounded-xl border p-4 flex items-center justify-between">
-              <div>
-                <div className="text-sm text-gray-500">Monthly subscription</div>
-                <div className="text-2xl font-bold">$9.99 <span className="text-sm text-gray-500">/ month</span></div>
-              </div>
-              <div>
-                <button
-                  onClick={onSubscribe}
-                  className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700"
-                >
-                  Subscribe $9.99 / mo
-                </button>
+            
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6 border border-blue-100">
+              <div className="flex items-center justify-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600" />
+                  <span>10 free analyses</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600" />
+                  <span>Full AI insights</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600" />
+                  <span>Smart replies</span>
+                </div>
               </div>
             </div>
 
-            <div className="mt-6 text-sm text-gray-500">
-              Secure payment via Stripe. You will be redirected to Stripe Checkout to complete the subscription.
+            <a
+              href="/login?mode=signup"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95 mb-4"
+            >
+              <Gift className="w-5 h-5" />
+              Sign Up Free
+            </a>
+            
+            <div className="border-t border-gray-100 pt-6 mt-6">
+              <p className="text-gray-500 text-sm mb-4">Already have an account?</p>
+              <a
+                href="/login"
+                className="text-blue-600 font-semibold hover:text-blue-700"
+              >
+                Log in here →
+              </a>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Logged in but out of trials - prompt to subscribe */
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-gradient-to-r from-amber-100 to-yellow-100 rounded-2xl">
+              <Crown className="w-6 h-6 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Go Premium</h2>
+              <p className="text-gray-600 mb-6">
+                You&apos;ve used all your free analyses. Upgrade to Premium for unlimited access!
+              </p>
 
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
-          Close
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                  <span className="text-gray-700">Unlimited message analysis</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                  <span className="text-gray-700">Advanced emotion detection</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                  <span className="text-gray-700">Priority AI processing</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                  <span className="text-gray-700">Cancel anytime</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 p-4 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
+                <div>
+                  <div className="text-sm text-gray-500">Monthly subscription</div>
+                  <div className="text-2xl font-bold">$9.99 <span className="text-sm text-gray-500 font-normal">/ month</span></div>
+                </div>
+                <div>
+                  <button
+                    onClick={onSubscribe}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95"
+                  >
+                    Subscribe Now
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 text-sm text-gray-500 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Secure payment via Stripe. Cancel anytime.
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2">
+          <X className="w-5 h-5" />
         </button>
       </div>
     </div>
@@ -400,7 +556,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar setShowPricing={setShowPaywall} session={session} onLogout={handleLogout} isPremium={isPremium} />
+      <Navbar setShowPricing={setShowPaywall} session={session} onLogout={handleLogout} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} />
 
       {deletedMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-50 text-green-700 px-6 py-3 rounded-xl border border-green-200 shadow-lg flex items-center gap-3">
@@ -416,11 +572,14 @@ export default function App() {
         <PaywallModal
           onClose={() => setShowPaywall(false)}
           onSubscribe={handleSubscribe}
+          session={session}
         />
       )}
 
       <main className="max-w-5xl mx-auto px-4 pt-6 pb-20">
-        {!result && <Hero />}
+        {!result && <Hero session={session} />}
+        {!result && !session && <SocialProof />}
+        {!result && !session && usageCount > 0 && usageCount < 3 && <SignupBanner usageCount={usageCount} />}
 
         <div className={`transition-all duration-500 ${result ? "pt-24" : ""}`}>
           <div className="relative max-w-3xl mx-auto">
@@ -511,13 +670,32 @@ export default function App() {
             </div>
 
             <div className="mt-12 text-center">
-              <p className="text-gray-400 text-sm mb-2">Want to analyze another conversation?</p>
-              <button
-                onClick={() => setShowPaywall(true)}
-                className="text-blue-600 font-semibold hover:text-blue-700 hover:underline"
-              >
-                Unlock Unlimited Access &rarr;
-              </button>
+              {!session ? (
+                <>
+                  <p className="text-gray-500 text-sm mb-3">Love the analysis?</p>
+                  <a
+                    href="/login?mode=signup"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95"
+                  >
+                    <Gift className="w-5 h-5" />
+                    Sign Up &amp; Get 10 Free Analyses
+                  </a>
+                </>
+              ) : !isPremium ? (
+                <>
+                  <p className="text-gray-400 text-sm mb-2">
+                    {freeUsesRemaining !== null && freeUsesRemaining > 0 
+                      ? `${freeUsesRemaining} free ${freeUsesRemaining === 1 ? 'analysis' : 'analyses'} remaining`
+                      : 'Want unlimited access?'}
+                  </p>
+                  <button
+                    onClick={() => setShowPaywall(true)}
+                    className="text-blue-600 font-semibold hover:text-blue-700 hover:underline"
+                  >
+                    Go Premium for Unlimited Access →
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
         )}
