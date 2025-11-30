@@ -7,13 +7,13 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT,
   plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'premium')),
   stripe_customer_id TEXT,
-  free_uses_remaining INTEGER DEFAULT 3,
+  free_uses_remaining INTEGER DEFAULT 10,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Migration: Add free_uses_remaining column if it doesn't exist
 -- Run this separately if updating an existing database
--- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS free_uses_remaining INTEGER DEFAULT 3;
+-- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS free_uses_remaining INTEGER DEFAULT 10;
 
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

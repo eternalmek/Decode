@@ -75,6 +75,7 @@ export default async function handler(req, res) {
           id: user.id,
           email: user.email,
           plan: "free",
+          free_uses_remaining: 10,
         });
 
       if (insertError) {
