@@ -37,7 +37,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, plan, free_uses_remaining)
-  VALUES (NEW.id, NEW.email, 'free', 3)
+  VALUES (NEW.id, NEW.email, 'free', 10)
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;

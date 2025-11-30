@@ -14,9 +14,12 @@ import {
   Copy,
   User,
   Crown,
+  Gift,
+  Shield,
+  X,
 } from 'lucide-react';
 
-const Navbar = ({ session, setShowPricing, isPremium }) => (
+const Navbar = ({ session, setShowPricing, isPremium, freeUsesRemaining }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -43,6 +46,12 @@ const Navbar = ({ session, setShowPricing, isPremium }) => (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
             <Crown className="w-3 h-3" />
             Premium
+          </span>
+        )}
+        {!isPremium && freeUsesRemaining !== null && (
+          <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
+            <Gift className="w-3 h-3" />
+            {freeUsesRemaining} free left
           </span>
         )}
         <a
@@ -133,39 +142,66 @@ const PaywallModal = ({ onClose, onSubscribe }) => (
     <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
       <div className="p-8">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-indigo-50 rounded-2xl">
-            <Lock className="w-6 h-6 text-indigo-600" />
+          <div className="p-3 bg-gradient-to-r from-amber-100 to-yellow-100 rounded-2xl">
+            <Crown className="w-6 h-6 text-amber-600" />
           </div>
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Premium</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Go Premium</h2>
             <p className="text-gray-600 mb-6">
-              Unlock unlimited analysis, advanced detection, and priority processing.
-              One plan only — $9.99 / month. Cancel anytime.
+              You&apos;ve used all your free analyses. Upgrade to Premium for unlimited access!
             </p>
 
-            <div className="rounded-xl border p-4 flex items-center justify-between">
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                  <Check className="w-3 h-3 text-green-600" />
+                </div>
+                <span className="text-gray-700">Unlimited message analysis</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                  <Check className="w-3 h-3 text-green-600" />
+                </div>
+                <span className="text-gray-700">Advanced emotion detection</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                  <Check className="w-3 h-3 text-green-600" />
+                </div>
+                <span className="text-gray-700">Priority AI processing</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                  <Check className="w-3 h-3 text-green-600" />
+                </div>
+                <span className="text-gray-700">Cancel anytime</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 p-4 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
               <div>
                 <div className="text-sm text-gray-500">Monthly subscription</div>
-                <div className="text-2xl font-bold">$9.99 <span className="text-sm text-gray-500">/ month</span></div>
+                <div className="text-2xl font-bold">$9.99 <span className="text-sm text-gray-500 font-normal">/ month</span></div>
               </div>
               <div>
                 <button
                   onClick={onSubscribe}
-                  className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95"
                 >
-                  Subscribe $9.99 / mo
+                  Subscribe Now
                 </button>
               </div>
             </div>
 
-            <div className="mt-6 text-sm text-gray-500">
-              Secure payment via Stripe. You will be redirected to Stripe Checkout to complete the subscription.
+            <div className="mt-6 text-sm text-gray-500 flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Secure payment via Stripe. Cancel anytime.
             </div>
           </div>
         </div>
 
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
-          Close
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2">
+          <X className="w-5 h-5" />
         </button>
       </div>
     </div>
@@ -358,7 +394,7 @@ export default function AppPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-      <Navbar session={session} setShowPricing={setShowPaywall} isPremium={isPremium} />
+      <Navbar session={session} setShowPricing={setShowPaywall} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} />
 
       {showPaywall && (
         <PaywallModal
@@ -371,6 +407,14 @@ export default function AppPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Decodr</h1>
           <p className="text-gray-500">You are logged in as {session.user.email}</p>
+          {!isPremium && freeUsesRemaining !== null && (
+            <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
+              <Gift className="w-4 h-4" />
+              {freeUsesRemaining > 0 
+                ? `${freeUsesRemaining} free ${freeUsesRemaining === 1 ? 'analysis' : 'analyses'} remaining`
+                : 'No free analyses left'}
+            </div>
+          )}
         </div>
 
         <div className="relative max-w-3xl mx-auto">
