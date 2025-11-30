@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import ChatWidget from '../components/ChatWidget';
 
-const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
+const Navbar = ({ session, isPremium }) => (
   <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
     <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div
@@ -42,20 +42,6 @@ const Navbar = ({ session, isPremium, freeUsesRemaining, profileLoading }) => (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
             <Crown className="w-3 h-3" />
             Premium
-          </span>
-        )}
-        {session && !isPremium && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
-            <Sparkles className="w-3 h-3" />
-            {profileLoading || freeUsesRemaining === null ? (
-              <span className="font-bold">...</span>
-            ) : (
-              <>
-                <span className="font-bold">{10 - freeUsesRemaining}</span>
-                <span className="text-blue-400">/</span>
-                <span>10</span>
-              </>
-            )}
           </span>
         )}
         <a
@@ -422,7 +408,7 @@ export default function AppPage() {
       </Head>
       
       <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-blue-100">
-        <Navbar session={session} isPremium={isPremium} freeUsesRemaining={freeUsesRemaining} profileLoading={profileLoading} />
+        <Navbar session={session} isPremium={isPremium} />
 
         {showPaywall && (
           <PaywallModal
@@ -435,14 +421,6 @@ export default function AppPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Analyze Your Conversation</h1>
             <p className="text-gray-500">Logged in as {session.user.email}</p>
-            {!isPremium && freeUsesRemaining !== null && (
-              <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200 shadow-sm">
-                <Sparkles className="w-4 h-4" />
-                {freeUsesRemaining > 0 
-                  ? <span><span className="font-bold">{freeUsesRemaining}</span> free analyses remaining</span>
-                  : <span>Upgrade to Premium for unlimited access</span>}
-              </div>
-            )}
             {isPremium && (
               <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-full text-sm font-medium border border-amber-200 shadow-sm">
                 <Crown className="w-4 h-4" />
@@ -556,26 +534,6 @@ export default function AppPage() {
                   </div>
                 </div>
               </div>
-              
-              {/* Upgrade prompt for free users */}
-              {!isPremium && freeUsesRemaining !== null && freeUsesRemaining <= 3 && (
-                <div className="mt-8 p-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl text-white text-center">
-                  <Crown className="w-8 h-8 mx-auto mb-3" />
-                  <h3 className="font-bold text-lg mb-2">Loving the insights?</h3>
-                  <p className="text-blue-100 mb-4">
-                    {freeUsesRemaining > 0 
-                      ? `You have ${freeUsesRemaining} free ${freeUsesRemaining === 1 ? 'analysis' : 'analyses'} left.`
-                      : "You've used all your free analyses."}
-                    {' '}Upgrade to Premium for unlimited access!
-                  </p>
-                  <button
-                    onClick={handleSubscribe}
-                    className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg hover:scale-105 active:scale-95"
-                  >
-                    Go Premium — $9.99/month
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </main>
